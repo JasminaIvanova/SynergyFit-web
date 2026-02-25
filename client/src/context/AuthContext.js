@@ -1,5 +1,5 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import axios from 'axios';
+import API from '../services/api';
 
 const AuthContext = createContext();
 
@@ -26,12 +26,11 @@ export const AuthProvider = ({ children }) => {
 
   const loadUser = async () => {
     try {
-      const config = {
+      const res = await API.get('/auth/me', {
         headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      };
-      const res = await axios.get('/api/auth/me', config);
+          Authorization: `Bearer ${token}`,
+        },
+      });
       setUser(res.data.user);
     } catch (error) {
       console.error('Load user error:', error);
@@ -41,9 +40,18 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const getErrorMessage = (error, fallback) => {
+    const data = error?.response?.data;
+    if (data?.message) return data.message;
+    if (Array.isArray(data?.errors) && data.errors.length > 0) {
+      return data.errors.map((e) => e.msg).filter(Boolean).join(', ');
+    }
+    return fallback;
+  };
+
   const login = async (email, password) => {
     try {
-      const res = await axios.post('/api/auth/login', { email, password });
+      const res = await API.post('/auth/login', { email, password });
       const { token, user } = res.data;
       localStorage.setItem('token', token);
       setToken(token);
@@ -52,14 +60,14 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       return {
         success: false,
-        message: error.response?.data?.message || 'Login failed'
+        message: getErrorMessage(error, 'Login failed'),
       };
     }
   };
 
   const register = async (name, email, password) => {
     try {
-      const res = await axios.post('/api/auth/register', { name, email, password });
+      const res = await API.post('/auth/register', { name, email, password });
       const { token, user } = res.data;
       localStorage.setItem('token', token);
       setToken(token);
@@ -68,7 +76,7 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       return {
         success: false,
-        message: error.response?.data?.message || 'Registration failed'
+        message: getErrorMessage(error, 'Registration failed'),
       };
     }
   };

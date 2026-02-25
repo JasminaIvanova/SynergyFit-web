@@ -15,21 +15,30 @@ const generateToken = (userId) => {
 // @desc    Register a new user
 exports.register = async (req, res) => {
   try {
+    console.log('📝 Registration attempt:', { email: req.body.email, name: req.body.name });
+    
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      console.log('❌ Validation errors:', errors.array());
       return res.status(400).json({ errors: errors.array() });
     }
 
     const { name, email, password } = req.body;
 
     // Check if user exists
-    const { data: existingUser } = await supabaseAdmin
+    const { data: existingUser, error: checkError } = await supabaseAdmin
       .from('users')
       .select('id, email')
       .eq('email', email)
       .single();
 
+    if (checkError && checkError.code !== 'PGRST116') {
+      console.error('❌ Error checking existing user:', checkError);
+      return res.status(500).json({ message: 'Database error: ' + checkError.message });
+    }
+
     if (existingUser) {
+      console.log('⚠️ User already exists:', email);
       return res.status(400).json({ message: 'Email already registered' });
     }
 
@@ -37,6 +46,7 @@ exports.register = async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const password_hash = await bcrypt.hash(password, salt);
 
+    console.log('💾 Creating user in database...');
     // Create user
     const { data: user, error } = await supabaseAdmin
       .from('users')
@@ -44,7 +54,12 @@ exports.register = async (req, res) => {
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error('❌ Error creating user:', error);
+      throw error;
+    }
+
+    console.log('✅ User created successfully:', user.id);
 
     // Generate token
     const token = generateToken(user.id);
@@ -59,8 +74,11 @@ exports.register = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('Register error:', error);
-    res.status(500).json({ message: 'Server error during registration' });
+    console.error('❌ Register error:', error);
+    res.status(500).json({ 
+      message: 'Server error during registration',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 };
 
