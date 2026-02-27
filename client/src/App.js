@@ -8,6 +8,7 @@ import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Workouts from './pages/Workouts';
 import WorkoutDetail from './pages/WorkoutDetail';
+import WorkoutCreate from './pages/WorkoutCreate';
 import Exercises from './pages/Exercises';
 import Meals from './pages/Meals';
 import Progress from './pages/Progress';
@@ -38,6 +39,12 @@ function App() {
               <Route path="/workouts" element={
                 <PrivateRoute>
                   <Workouts />
+                </PrivateRoute>
+              } />
+
+              <Route path="/workouts/new" element={
+                <PrivateRoute>
+                  <WorkoutCreate />
                 </PrivateRoute>
               } />
               

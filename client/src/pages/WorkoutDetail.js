@@ -9,8 +9,10 @@ const WorkoutDetail = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (id) {
+    if (id && id !== 'new') {
       loadWorkout();
+    } else {
+      setLoading(false);
     }
   }, [id]);
 
@@ -51,36 +53,36 @@ const WorkoutDetail = () => {
       <div className="card">
         <div className="flex-between mb-2">
           <div>
-            <h1>{workout.name}</h1>
+            <h1>{workout.title}</h1>
             <p className="text-muted">{workout.description}</p>
           </div>
-          <span className={`workout-badge ${workout.isCompleted ? 'completed' : 'scheduled'}`}>
-            {workout.isCompleted ? 'Completed' : 'Scheduled'}
+          <span className={`workout-badge ${workout.completed_date ? 'completed' : 'scheduled'}`}>
+            {workout.completed_date ? 'Completed' : 'Scheduled'}
           </span>
         </div>
 
         <div className="grid grid-3 mb-3">
           <div>
-            <strong>Category:</strong> {workout.category || 'N/A'}
+            <strong>Type:</strong> {workout.workout_type || 'N/A'}
           </div>
           <div>
-            <strong>Difficulty:</strong> {workout.difficulty || 'N/A'}
+            <strong>Template:</strong> {workout.is_template ? 'Yes' : 'No'}
           </div>
           <div>
-            <strong>Duration:</strong> {workout.totalDuration || 0} min
+            <strong>Duration:</strong> {workout.duration_minutes || 0} min
           </div>
         </div>
 
-        {workout.scheduledDate && (
-          <p><strong>Scheduled:</strong> {new Date(workout.scheduledDate).toLocaleString()}</p>
+        {workout.scheduled_date && (
+          <p><strong>Scheduled:</strong> {new Date(workout.scheduled_date).toLocaleString()}</p>
         )}
 
-        {workout.isCompleted && workout.completedAt && (
-          <p><strong>Completed:</strong> {new Date(workout.completedAt).toLocaleString()}</p>
+        {workout.completed_date && (
+          <p><strong>Completed:</strong> {new Date(workout.completed_date).toLocaleString()}</p>
         )}
 
-        {workout.rating && (
-          <p><strong>Rating:</strong> {'⭐'.repeat(workout.rating)}</p>
+        {workout.calories_burned && (
+          <p><strong>Calories burned:</strong> {workout.calories_burned}</p>
         )}
       </div>
 
@@ -96,8 +98,8 @@ const WorkoutDetail = () => {
                   {ex.sets && <div><strong>Sets:</strong> {ex.sets}</div>}
                   {ex.reps && <div><strong>Reps:</strong> {ex.reps}</div>}
                   {ex.weight && <div><strong>Weight:</strong> {ex.weight} kg</div>}
-                  {ex.duration && <div><strong>Duration:</strong> {ex.duration} min</div>}
-                  {ex.restTime && <div><strong>Rest:</strong> {ex.restTime}s</div>}
+                  {ex.duration_seconds && <div><strong>Duration:</strong> {Math.round(ex.duration_seconds / 60)} min</div>}
+                  {ex.rest_seconds && <div><strong>Rest:</strong> {ex.rest_seconds}s</div>}
                 </div>
                 {ex.notes && <p className="text-muted mt-1"><em>{ex.notes}</em></p>}
               </div>

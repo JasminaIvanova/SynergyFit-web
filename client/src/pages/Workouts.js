@@ -97,39 +97,39 @@ const Workouts = () => {
       ) : (
         <div className="grid grid-2">
           {workouts.map((workout) => (
-            <div key={workout._id} className="workout-card">
+            <div key={workout.id} className="workout-card">
               <div className="workout-card-header">
                 <div>
-                  <h3>{workout.name}</h3>
+                  <h3>{workout.title}</h3>
                   <p className="text-muted">{workout.description}</p>
                 </div>
-                <span className={`workout-badge ${workout.isCompleted ? 'completed' : 'scheduled'}`}>
-                  {workout.isCompleted ? 'Completed' : 'Scheduled'}
+                <span className={`workout-badge ${workout.completed_date ? 'completed' : 'scheduled'}`}>
+                  {workout.completed_date ? 'Completed' : 'Scheduled'}
                 </span>
               </div>
 
               <div style={{ marginBottom: '15px' }}>
                 <p><strong>Exercises:</strong> {workout.exercises?.length || 0}</p>
-                <p><strong>Duration:</strong> {workout.totalDuration || 0} minutes</p>
-                {workout.caloriesBurned && <p><strong>Calories:</strong> {workout.caloriesBurned}</p>}
-                {workout.scheduledDate && (
-                  <p><strong>Scheduled:</strong> {new Date(workout.scheduledDate).toLocaleDateString()}</p>
+                <p><strong>Duration:</strong> {workout.duration_minutes || 0} minutes</p>
+                {workout.calories_burned && <p><strong>Calories:</strong> {workout.calories_burned}</p>}
+                {workout.scheduled_date && (
+                  <p><strong>Scheduled:</strong> {new Date(workout.scheduled_date).toLocaleDateString()}</p>
                 )}
               </div>
 
               <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                <Link to={`/workouts/${workout._id}`} className="btn btn-primary">View</Link>
-                {!workout.isCompleted && (
+                <Link to={`/workouts/${workout.id}`} className="btn btn-primary">View</Link>
+                {!workout.completed_date && (
                   <button 
                     className="btn btn-success"
-                    onClick={() => handleComplete(workout._id)}
+                    onClick={() => handleComplete(workout.id)}
                   >
                     Complete
                   </button>
                 )}
                 <button 
                   className="btn btn-danger"
-                  onClick={() => handleDelete(workout._id)}
+                  onClick={() => handleDelete(workout.id)}
                 >
                   Delete
                 </button>
