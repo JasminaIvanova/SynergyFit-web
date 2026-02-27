@@ -94,14 +94,14 @@ const Exercises = () => {
       ) : (
         <div className="grid grid-3">
           {exercises.map((exercise) => (
-            <div key={exercise._id} className="card">
+            <div key={exercise.id || exercise._id} className="card">
               <h3>{exercise.name}</h3>
               <div style={{ marginTop: '10px', marginBottom: '15px' }}>
                 <span className="workout-badge scheduled" style={{ marginRight: '5px' }}>
                   {exercise.category}
                 </span>
                 <span className="workout-badge completed">
-                  {exercise.difficulty}
+                  {exercise.difficulty_level || exercise.difficulty}
                 </span>
               </div>
               
@@ -111,7 +111,12 @@ const Exercises = () => {
               
               <div style={{ marginTop: '10px' }}>
                 <strong>Muscle Groups:</strong>
-                <p className="text-muted">{exercise.muscleGroups?.join(', ') || 'N/A'}</p>
+                <p className="text-muted">
+                  {(
+                    exercise.muscle_group ||
+                    (Array.isArray(exercise.muscleGroups) ? exercise.muscleGroups.join(', ') : '')
+                  ) || 'N/A'}
+                </p>
               </div>
               
               <div>
