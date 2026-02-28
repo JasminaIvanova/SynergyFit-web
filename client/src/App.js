@@ -10,6 +10,7 @@ import Workouts from './pages/Workouts';
 import WorkoutDetail from './pages/WorkoutDetail';
 import WorkoutCreate from './pages/WorkoutCreate';
 import Exercises from './pages/Exercises';
+import ExerciseDetail from './pages/ExerciseDetail';
 import Meals from './pages/Meals';
 import Progress from './pages/Progress';
 import Social from './pages/Social';
@@ -57,6 +58,12 @@ function App() {
               <Route path="/exercises" element={
                 <PrivateRoute>
                   <Exercises />
+                </PrivateRoute>
+              } />
+
+              <Route path="/exercises/:id" element={
+                <PrivateRoute>
+                  <ExerciseDetail />
                 </PrivateRoute>
               } />
               

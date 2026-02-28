@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { exerciseService } from '../services';
+import { Link } from 'react-router-dom';
+import { exerciseDbService } from '../services';
 
 const Exercises = () => {
   const [exercises, setExercises] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState({ category: '', muscleGroups: '', difficulty: '' });
+  const [error, setError] = useState('');
 
   useEffect(() => {
     loadExercises();
@@ -12,15 +14,29 @@ const Exercises = () => {
 
   const loadExercises = async () => {
     try {
-      const params = {};
-      if (filter.category) params.category = filter.category;
-      if (filter.difficulty) params.difficulty = filter.difficulty;
-      if (filter.muscleGroups) params.muscleGroups = filter.muscleGroups;
+      setError('');
+      // ExerciseDB API supports general listing + search.
+      // We keep the existing UI filters and translate them into a search string.
+      const terms = [];
+      if (filter.category) terms.push(filter.category);
+      if (filter.difficulty) terms.push(filter.difficulty);
+      if (filter.muscleGroups) terms.push(filter.muscleGroups);
 
-      const res = await exerciseService.getExercises(params);
-      setExercises(res.data.exercises || []);
+      if (terms.length > 0) {
+        const res = await exerciseDbService.searchExercises(terms.join(' '));
+        const data = res.data;
+        const list = data?.exercises || data?.data || data;
+        setExercises(Array.isArray(list) ? list : []);
+      } else {
+        const res = await exerciseDbService.getExercises({ limit: 60, offset: 0 });
+        const data = res.data;
+        const list = data?.exercises || data?.data || data;
+        setExercises(Array.isArray(list) ? list : []);
+      }
     } catch (error) {
       console.error('Error loading exercises:', error);
+      setExercises([]);
+      setError(error?.response?.data?.message || 'Failed to load exercises from ExerciseDB.');
     } finally {
       setLoading(false);
     }
@@ -87,6 +103,13 @@ const Exercises = () => {
 
       {loading ? (
         <div className="spinner"></div>
+      ) : error ? (
+        <div className="card text-center">
+          <p className="error">{error}</p>
+          <p className="text-muted" style={{ marginTop: '8px' }}>
+            If you are running locally, set RAPIDAPI_KEY in the server .env.
+          </p>
+        </div>
       ) : exercises.length === 0 ? (
         <div className="card text-center">
           <p className="text-muted">No exercises found</p>
@@ -94,14 +117,19 @@ const Exercises = () => {
       ) : (
         <div className="grid grid-3">
           {exercises.map((exercise) => (
-            <div key={exercise.id || exercise._id} className="card">
+            <Link
+              key={exercise.exerciseId || exercise.id || exercise._id}
+              to={`/exercises/${exercise.exerciseId || exercise.id || exercise._id}`}
+              className="card"
+              style={{ textDecoration: 'none', color: 'inherit' }}
+            >
               <h3>{exercise.name}</h3>
               <div style={{ marginTop: '10px', marginBottom: '15px' }}>
                 <span className="workout-badge scheduled" style={{ marginRight: '5px' }}>
-                  {exercise.category}
+                  {exercise.bodyPart || exercise.category || 'exercise'}
                 </span>
                 <span className="workout-badge completed">
-                  {exercise.difficulty_level || exercise.difficulty}
+                  {exercise.exerciseType || exercise.difficulty_level || exercise.difficulty || 'N/A'}
                 </span>
               </div>
               
@@ -113,6 +141,7 @@ const Exercises = () => {
                 <strong>Muscle Groups:</strong>
                 <p className="text-muted">
                   {(
+                    exercise.target ||
                     exercise.muscle_group ||
                     (Array.isArray(exercise.muscleGroups) ? exercise.muscleGroups.join(', ') : '')
                   ) || 'N/A'}
@@ -123,7 +152,7 @@ const Exercises = () => {
                 <strong>Equipment:</strong>
                 <p className="text-muted">{exercise.equipment || 'None'}</p>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       )}

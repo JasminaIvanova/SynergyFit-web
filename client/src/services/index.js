@@ -18,6 +18,14 @@ export const exerciseService = {
   deleteExercise: (id) => API.delete(`/exercises/${id}`),
 };
 
+export const exerciseDbService = {
+  liveness: () => API.get('/exercisedb/liveness'),
+  getBodyparts: () => API.get('/exercisedb/bodyparts'),
+  getExercises: (params) => API.get('/exercisedb/exercises', { params }),
+  searchExercises: (search) => API.get('/exercisedb/exercises/search', { params: { search } }),
+  getExerciseByExternalId: (exerciseId) => API.get(`/exercisedb/exercises/${exerciseId}`),
+};
+
 export const mealService = {
   getMeals: (params) => API.get('/meals', { params }),
   getMealById: (id) => API.get(`/meals/${id}`),
