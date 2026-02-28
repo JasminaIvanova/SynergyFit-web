@@ -7,6 +7,9 @@ const Exercises = () => {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState({ category: '', muscleGroups: '', difficulty: '' });
   const [error, setError] = useState('');
+  const [hasNextPage, setHasNextPage] = useState(false);
+  const [nextCursor, setNextCursor] = useState('');
+  const [loadingMore, setLoadingMore] = useState(false);
 
   useEffect(() => {
     loadExercises();
@@ -25,20 +28,58 @@ const Exercises = () => {
       if (terms.length > 0) {
         const res = await exerciseDbService.searchExercises(terms.join(' '));
         const data = res.data;
-        const list = data?.exercises || data?.data || data;
+        const list = data?.data || data?.exercises || data;
         setExercises(Array.isArray(list) ? list : []);
+        setHasNextPage(false);
+        setNextCursor('');
       } else {
-        const res = await exerciseDbService.getExercises({ limit: 60, offset: 0 });
+        const res = await exerciseDbService.getExercises({ limit: 200 });
         const data = res.data;
-        const list = data?.exercises || data?.data || data;
+        const list = data?.data || data?.exercises || data;
         setExercises(Array.isArray(list) ? list : []);
+        setHasNextPage(!!data?.meta?.hasNextPage);
+        setNextCursor(data?.meta?.nextCursor || '');
       }
     } catch (error) {
       console.error('Error loading exercises:', error);
       setExercises([]);
       setError(error?.response?.data?.message || 'Failed to load exercises from ExerciseDB.');
+      setHasNextPage(false);
+      setNextCursor('');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadMore = async () => {
+    if (!hasNextPage || !nextCursor || loadingMore) return;
+
+    try {
+      setLoadingMore(true);
+      const res = await exerciseDbService.getExercises({ limit: 200, after: nextCursor });
+      const data = res.data;
+      const list = data?.data || [];
+
+      setExercises((prev) => {
+        const seen = new Set(prev.map((x) => x.exerciseId || x.id || x._id));
+        const merged = [...prev];
+        for (const item of list) {
+          const key = item.exerciseId || item.id || item._id;
+          if (!seen.has(key)) {
+            seen.add(key);
+            merged.push(item);
+          }
+        }
+        return merged;
+      });
+
+      setHasNextPage(!!data?.meta?.hasNextPage);
+      setNextCursor(data?.meta?.nextCursor || '');
+    } catch (err) {
+      console.error('Error loading more exercises:', err);
+      setError(err?.response?.data?.message || 'Failed to load more exercises.');
+    } finally {
+      setLoadingMore(false);
     }
   };
 
@@ -115,46 +156,61 @@ const Exercises = () => {
           <p className="text-muted">No exercises found</p>
         </div>
       ) : (
-        <div className="grid grid-3">
-          {exercises.map((exercise) => (
-            <Link
-              key={exercise.exerciseId || exercise.id || exercise._id}
-              to={`/exercises/${exercise.exerciseId || exercise.id || exercise._id}`}
-              className="card"
-              style={{ textDecoration: 'none', color: 'inherit' }}
-            >
-              <h3>{exercise.name}</h3>
-              <div style={{ marginTop: '10px', marginBottom: '15px' }}>
-                <span className="workout-badge scheduled" style={{ marginRight: '5px' }}>
-                  {exercise.bodyPart || exercise.category || 'exercise'}
-                </span>
-                <span className="workout-badge completed">
-                  {exercise.exerciseType || exercise.difficulty_level || exercise.difficulty || 'N/A'}
-                </span>
-              </div>
-              
-              {exercise.description && (
-                <p className="text-muted" style={{ fontSize: '0.9rem' }}>{exercise.description}</p>
-              )}
-              
-              <div style={{ marginTop: '10px' }}>
-                <strong>Muscle Groups:</strong>
-                <p className="text-muted">
-                  {(
-                    exercise.target ||
-                    exercise.muscle_group ||
-                    (Array.isArray(exercise.muscleGroups) ? exercise.muscleGroups.join(', ') : '')
-                  ) || 'N/A'}
-                </p>
-              </div>
-              
-              <div>
-                <strong>Equipment:</strong>
-                <p className="text-muted">{exercise.equipment || 'None'}</p>
-              </div>
-            </Link>
-          ))}
-        </div>
+        <>
+          <div className="grid grid-3">
+            {exercises.map((exercise) => (
+              <Link
+                key={exercise.exerciseId || exercise.id || exercise._id}
+                to={`/exercises/${exercise.exerciseId || exercise.id || exercise._id}`}
+                className="card"
+                style={{ textDecoration: 'none', color: 'inherit' }}
+              >
+                <h3>{exercise.name}</h3>
+                <div style={{ marginTop: '10px', marginBottom: '15px' }}>
+                  <span className="workout-badge scheduled" style={{ marginRight: '5px' }}>
+                    {Array.isArray(exercise.bodyParts) && exercise.bodyParts.length > 0
+                      ? exercise.bodyParts[0]
+                      : (exercise.bodyPart || exercise.category || 'exercise')}
+                  </span>
+                  <span className="workout-badge completed">
+                    {exercise.exerciseType || exercise.difficulty_level || exercise.difficulty || 'N/A'}
+                  </span>
+                </div>
+                
+                {exercise.description && (
+                  <p className="text-muted" style={{ fontSize: '0.9rem' }}>{exercise.description}</p>
+                )}
+                
+                <div style={{ marginTop: '10px' }}>
+                  <strong>Muscle Groups:</strong>
+                  <p className="text-muted">
+                    {(
+                      (Array.isArray(exercise.targetMuscles) ? exercise.targetMuscles.join(', ') : '') ||
+                      exercise.target ||
+                      exercise.muscle_group ||
+                      (Array.isArray(exercise.muscleGroups) ? exercise.muscleGroups.join(', ') : '')
+                    ) || 'N/A'}
+                  </p>
+                </div>
+                
+                <div>
+                  <strong>Equipment:</strong>
+                  <p className="text-muted">
+                    {(Array.isArray(exercise.equipments) ? exercise.equipments.join(', ') : '') || exercise.equipment || 'None'}
+                  </p>
+                </div>
+              </Link>
+            ))}
+          </div>
+
+          {hasNextPage && nextCursor && (
+            <div className="flex-center mt-2">
+              <button className="btn btn-secondary" onClick={loadMore} disabled={loadingMore}>
+                {loadingMore ? 'Loading...' : 'Load more'}
+              </button>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

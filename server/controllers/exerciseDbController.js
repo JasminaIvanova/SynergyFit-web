@@ -59,9 +59,8 @@ exports.getBodyparts = async (req, res) => {
 
 exports.getExercises = async (req, res) => {
   try {
-    const params = {};
-    if (req.query.limit) params.limit = req.query.limit;
-    if (req.query.offset) params.offset = req.query.offset;
+    // Pass through query params (e.g. limit, cursor/after, etc.)
+    const params = { ...req.query };
 
     const data = await forwardGet(res, '/exercises', params);
     res.json(data);

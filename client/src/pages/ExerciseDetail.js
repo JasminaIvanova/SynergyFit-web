@@ -26,6 +26,16 @@ const extractMediaUrls = (external) => {
     if (typeof v === 'object') {
       if (typeof v.url === 'string') candidates.push(v.url);
       if (typeof v.src === 'string') candidates.push(v.src);
+
+      // Handle maps like { '360p': 'https://...', '480p': 'https://...' }
+      for (const key of Object.keys(v)) {
+        const value = v[key];
+        if (typeof value === 'string') {
+          candidates.push(value);
+        } else if (value && typeof value === 'object') {
+          push(value);
+        }
+      }
     }
   };
 
@@ -37,6 +47,8 @@ const extractMediaUrls = (external) => {
   push(external.images);
   push(external.imageUrls);
   push(external.image_urls);
+  push(external.imageUrl);
+  push(external.image_url);
 
   // Some APIs provide videos as URLs too; we will show them separately as links.
   push(external.thumbnailUrl);
@@ -103,11 +115,17 @@ const ExerciseDetail = () => {
           if (name) {
             try {
               const searchRes = await exerciseDbService.searchExercises(name);
-              const list = searchRes.data;
+              const payload = searchRes.data;
+              const list = payload?.data || payload?.exercises || payload;
 
-              // API may return an array directly or wrap it.
-              const first = pickFirst(list?.exercises || list?.data || list);
-              setExternal(first || null);
+              const first = pickFirst(list);
+              if (first?.exerciseId) {
+                const fullRes = await exerciseDbService.getExerciseByExternalId(first.exerciseId);
+                const full = fullRes.data?.data || fullRes.data;
+                setExternal(full || null);
+              } else {
+                setExternal(first || null);
+              }
             } catch (externalErr) {
               console.error('Error loading external exercise info:', externalErr);
               setExternal(null);
@@ -118,16 +136,16 @@ const ExerciseDetail = () => {
         } else {
           // External exercise: fetch directly by external id.
           const externalRes = await exerciseDbService.getExerciseByExternalId(id);
-          const externalData = externalRes.data;
+          const externalData = externalRes.data?.data || externalRes.data;
           setExternal(externalData || null);
 
           // Build a minimal local exercise object for rendering basics.
           setExercise({
             name: externalData?.name || 'Exercise',
             description: externalData?.description || '',
-            category: externalData?.bodyPart || externalData?.category || '',
-            muscle_group: externalData?.target || '',
-            equipment: externalData?.equipment || '',
+            category: (Array.isArray(externalData?.bodyParts) ? externalData.bodyParts[0] : '') || externalData?.bodyPart || externalData?.category || '',
+            muscle_group: (Array.isArray(externalData?.targetMuscles) ? externalData.targetMuscles[0] : '') || externalData?.target || '',
+            equipment: (Array.isArray(externalData?.equipments) ? externalData.equipments[0] : '') || externalData?.equipment || '',
           });
         }
       } catch (err) {
@@ -203,13 +221,16 @@ const ExerciseDetail = () => {
           <h2 className="mb-2">More info</h2>
           <div className="grid grid-3">
             <div>
-              <strong>Body part:</strong> {external.bodyPart || external.bodypart || 'N/A'}
+              <strong>Body part:</strong>{' '}
+              {(Array.isArray(external.bodyParts) ? external.bodyParts.join(', ') : '') || external.bodyPart || external.bodypart || 'N/A'}
             </div>
             <div>
-              <strong>Target:</strong> {external.target || external.muscle || 'N/A'}
+              <strong>Target:</strong>{' '}
+              {(Array.isArray(external.targetMuscles) ? external.targetMuscles.join(', ') : '') || external.target || external.muscle || 'N/A'}
             </div>
             <div>
-              <strong>Equipment:</strong> {external.equipment || 'N/A'}
+              <strong>Equipment:</strong>{' '}
+              {(Array.isArray(external.equipments) ? external.equipments.join(', ') : '') || external.equipment || 'N/A'}
             </div>
           </div>
 
@@ -218,46 +239,48 @@ const ExerciseDetail = () => {
               <strong>Type:</strong> {external.exerciseType || external.exercisetype}
             </div>
           )}
+
+          {external.overview && (
+            <p className="text-muted mt-2">{external.overview}</p>
+          )}
         </div>
       )}
 
-      {(mediaUrls.length > 0 || videoUrls.length > 0) && (
-        <div className="card">
-          <h2 className="mb-2">Media</h2>
+      <div className="card">
+        <h2 className="mb-2">Media</h2>
 
-          {mediaUrls.length > 0 && (
-            <div className="grid grid-3">
-              {mediaUrls.slice(0, 9).map((url) => (
-                <div key={url} className="card" style={{ marginBottom: 0 }}>
-                  <img
-                    src={url}
-                    alt={exercise.name}
-                    style={{ width: '100%', borderRadius: '8px', display: 'block' }}
-                    loading="lazy"
-                  />
+        {mediaUrls.length > 0 ? (
+          <div className="grid grid-3">
+            {mediaUrls.slice(0, 9).map((url) => (
+              <div key={url} className="card" style={{ marginBottom: 0 }}>
+                <img
+                  src={url}
+                  alt={exercise.name}
+                  style={{ width: '100%', borderRadius: '8px', display: 'block' }}
+                  loading="lazy"
+                />
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-muted">No images available for this exercise.</p>
+        )}
+
+        {(external?.videoUrl || videoUrls.length > 0) && (
+          <div className="mt-2">
+            <strong>Video:</strong>
+            <div style={{ marginTop: '8px' }}>
+              {[external?.videoUrl, ...videoUrls].filter(Boolean).slice(0, 3).map((url) => (
+                <div key={url} style={{ marginBottom: '6px' }}>
+                  <a href={url} target="_blank" rel="noreferrer">
+                    {url}
+                  </a>
                 </div>
               ))}
             </div>
-          )}
-
-          {videoUrls.length > 0 && (
-            <div className="mt-2">
-              <strong>Videos:</strong>
-              <div style={{ marginTop: '8px' }}>
-                {videoUrls.slice(0, 5).map((url) => (
-                  <div key={url} style={{ marginBottom: '6px' }}>
-                    <a href={url} target="_blank" rel="noreferrer">
-                      {url}
-                    </a>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {!external && <p className="text-muted">External media unavailable.</p>}
-        </div>
-      )}
+          </div>
+        )}
+      </div>
 
       {external?.instructions && Array.isArray(external.instructions) && external.instructions.length > 0 && (
         <div className="card">
