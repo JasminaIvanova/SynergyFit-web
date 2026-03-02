@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { mealService, foodService } from '../services';
 
@@ -7,8 +7,12 @@ const MealCreate = () => {
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
+  const [popularFoods, setPopularFoods] = useState([]);
   const [searching, setSearching] = useState(false);
+  const [searchIsOffline, setSearchIsOffline] = useState(false);
   const [selectedFoods, setSelectedFoods] = useState([]);
+  const [showMealForm, setShowMealForm] = useState(false);
+  const [error, setError] = useState(null);
   
   const [mealData, setMealData] = useState({
     name: '',
@@ -17,17 +21,62 @@ const MealCreate = () => {
     notes: '',
   });
 
+  useEffect(() => {
+    // Show offline data immediately, then try to update with online data
+    loadPopularFoods();
+  }, []);
+
+  const loadPopularFoods = async () => {
+    // Start with offline fallback data immediately
+    const offlineData = [
+      { barcode: '0000000000000', name: 'Chicken Breast (Raw)', brand: 'Generic', nutrition: { caloriesPer100g: 165, proteinPer100g: 31, carbsPer100g: 0, fatPer100g: 3.6, fiberPer100g: 0 } },
+      { barcode: '0000000000001', name: 'Banana', brand: 'Generic', nutrition: { caloriesPer100g: 89, proteinPer100g: 1.1, carbsPer100g: 23, fatPer100g: 0.3, fiberPer100g: 2.6 } },
+      { barcode: '0000000000002', name: 'Brown Rice (Cooked)', brand: 'Generic', nutrition: { caloriesPer100g: 112, proteinPer100g: 2.6, carbsPer100g: 24, fatPer100g: 0.9, fiberPer100g: 1.8 } },
+      { barcode: '0000000000003', name: 'Whole Eggs', brand: 'Generic', nutrition: { caloriesPer100g: 155, proteinPer100g: 13, carbsPer100g: 1.1, fatPer100g: 11, fiberPer100g: 0 } },
+      { barcode: '0000000000004', name: 'Salmon (Raw)', brand: 'Generic', nutrition: { caloriesPer100g: 208, proteinPer100g: 20, carbsPer100g: 0, fatPer100g: 13, fiberPer100g: 0 } },
+      { barcode: '0000000000005', name: 'Broccoli (Raw)', brand: 'Generic', nutrition: { caloriesPer100g: 34, proteinPer100g: 2.8, carbsPer100g: 7, fatPer100g: 0.4, fiberPer100g: 2.6 } },
+      { barcode: '0000000000006', name: 'Sweet Potato', brand: 'Generic', nutrition: { caloriesPer100g: 86, proteinPer100g: 1.6, carbsPer100g: 20, fatPer100g: 0.1, fiberPer100g: 3 } },
+      { barcode: '0000000000007', name: 'Greek Yogurt (Plain)', brand: 'Generic', nutrition: { caloriesPer100g: 59, proteinPer100g: 10, carbsPer100g: 3.6, fatPer100g: 0.4, fiberPer100g: 0 } },
+      { barcode: '0000000000008', name: 'Oats (Dry)', brand: 'Generic', nutrition: { caloriesPer100g: 389, proteinPer100g: 17, carbsPer100g: 66, fatPer100g: 7, fiberPer100g: 11 } },
+      { barcode: '0000000000009', name: 'Almonds', brand: 'Generic', nutrition: { caloriesPer100g: 579, proteinPer100g: 21, carbsPer100g: 22, fatPer100g: 50, fiberPer100g: 12 } },
+      { barcode: '0000000000010', name: 'Apple', brand: 'Generic', nutrition: { caloriesPer100g: 52, proteinPer100g: 0.3, carbsPer100g: 14, fatPer100g: 0.2, fiberPer100g: 2.4 } },
+      { barcode: '0000000000011', name: 'Whole Milk', brand: 'Generic', nutrition: { caloriesPer100g: 61, proteinPer100g: 3.2, carbsPer100g: 4.8, fatPer100g: 3.3, fiberPer100g: 0 } }
+    ];
+    
+    setPopularFoods(offlineData);
+    
+    // Try to fetch from API in the background (non-blocking)
+    try {
+      const res = await foodService.getPopularFoods();
+      if (res.data.products?.length > 0 && res.data.products[0].imageUrl !== null) {
+        // Only update if we got real online data (not the same fallback)
+        setPopularFoods(res.data.products);
+        console.log('Updated with online food data');
+      }
+    } catch (error) {
+      console.log('Using offline food database (API unavailable)');
+      // Keep offline data - already set above
+    }
+  };
+
   const handleSearch = async (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
     if (!searchQuery.trim()) return;
 
     setSearching(true);
+    setError(null);
+    setSearchIsOffline(false);
     try {
       const res = await foodService.searchFoods(searchQuery);
       setSearchResults(res.data.products || []);
+      setSearchIsOffline(res.data.offline || false);
+      if (res.data.products.length === 0) {
+        setError('No foods found. Try a different search term.');
+      }
     } catch (error) {
       console.error('Search error:', error);
-      alert('Error searching for foods');
+      setError(error.response?.data?.message || 'Error searching for foods. Please try again.');
+      setSearchResults([]);
     } finally {
       setSearching(false);
     }
@@ -137,166 +186,429 @@ const MealCreate = () => {
 
   const totalNutrition = calculateTotalNutrition();
 
+  // Food card component for cleaner rendering
+  const FoodCard = ({ product, onAdd }) => (
+    <div style={{
+      border: '1px solid #e0e0e0',
+      borderRadius: '12px',
+      padding: '15px',
+      backgroundColor: '#fff',
+      cursor: 'pointer',
+      transition: 'all 0.2s',
+      display: 'flex',
+      flexDirection: 'column',
+      height: '100%',
+      boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
+    }}
+    onMouseOver={(e) => e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)'}
+    onMouseOut={(e) => e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.05)'}
+    >
+      {/* Food emoji icon instead of image */}
+      <div style={{
+        width: '100%',
+        height: '100px',
+        backgroundColor: '#f8f9fa',
+        borderRadius: '8px',
+        marginBottom: '12px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: '3rem'
+      }}>
+        {product.name.toLowerCase().includes('chicken') ? '🍗' :
+         product.name.toLowerCase().includes('banana') ? '🍌' :
+         product.name.toLowerCase().includes('rice') ? '🍚' :
+         product.name.toLowerCase().includes('egg') ? '🥚' :
+         product.name.toLowerCase().includes('salmon') || product.name.toLowerCase().includes('fish') ? '🐟' :
+         product.name.toLowerCase().includes('broccoli') ? '🥦' :
+         product.name.toLowerCase().includes('potato') ? '🍠' :
+         product.name.toLowerCase().includes('yogurt') || product.name.toLowerCase().includes('yoghurt') ? '🥛' :
+         product.name.toLowerCase().includes('oat') ? '🌾' :
+         product.name.toLowerCase().includes('almond') || product.name.toLowerCase().includes('nut') ? '🥜' :
+         product.name.toLowerCase().includes('apple') ? '🍎' :
+         product.name.toLowerCase().includes('milk') ? '🥛' :
+         product.name.toLowerCase().includes('bread') ? '🍞' :
+         product.name.toLowerCase().includes('pasta') ? '🍝' :
+         product.name.toLowerCase().includes('beef') || product.name.toLowerCase().includes('steak') ? '🥩' :
+         product.name.toLowerCase().includes('cheese') ? '🧀' :
+         product.name.toLowerCase().includes('tomato') ? '🍅' :
+         product.name.toLowerCase().includes('carrot') ? '🥕' :
+         product.name.toLowerCase().includes('salad') || product.name.toLowerCase().includes('lettuce') ? '🥗' :
+         '🍽️'}
+      </div>
+      
+      <div style={{ flex: 1 }}>
+        <h4 style={{ 
+          margin: 0, 
+          marginBottom: '4px', 
+          fontSize: '0.95rem', 
+          fontWeight: '600',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          display: '-webkit-box',
+          WebkitLineClamp: 2,
+          WebkitBoxOrient: 'vertical',
+          lineHeight: '1.3'
+        }}>
+          {product.name}
+        </h4>
+        
+        {product.brand && (
+          <p style={{ 
+            margin: 0, 
+            marginBottom: '8px', 
+            fontSize: '0.8rem', 
+            color: '#666',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap'
+          }}>
+            {product.brand}
+          </p>
+        )}
+        
+        {product.nutriScore && (
+          <span style={{
+            display: 'inline-block',
+            padding: '2px 8px',
+            borderRadius: '4px',
+            fontSize: '0.75rem',
+            fontWeight: 'bold',
+            backgroundColor: product.nutriScore === 'a' ? '#4CAF50' : 
+                           product.nutriScore === 'b' ? '#8BC34A' :
+                           product.nutriScore === 'c' ? '#FFC107' :
+                           product.nutriScore === 'd' ? '#FF9800' : '#FF5722',
+            color: '#fff',
+            marginBottom: '8px'
+          }}>
+            NUTRI-SCORE {product.nutriScore?.toUpperCase()}
+          </span>
+        )}
+        
+        <div style={{ 
+          fontSize: '0.8rem', 
+          color: '#444',
+          marginTop: '8px',
+          padding: '8px',
+          backgroundColor: '#f8f9fa',
+          borderRadius: '6px'
+        }}>
+          <div style={{ fontWeight: '600', marginBottom: '4px' }}>Per 100g:</div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px' }}>
+            <div>🔥 {Math.round(product.nutrition.caloriesPer100g)} kcal</div>
+            <div>🥩 {Math.round(product.nutrition.proteinPer100g)}g protein</div>
+            <div>🍞 {Math.round(product.nutrition.carbsPer100g)}g carbs</div>
+            <div>🧈 {Math.round(product.nutrition.fatPer100g)}g fat</div>
+          </div>
+        </div>
+      </div>
+      
+      <button
+        className="btn btn-primary"
+        onClick={(e) => {
+          e.stopPropagation();
+          onAdd(product);
+        }}
+        style={{ 
+          marginTop: '12px',
+          width: '100%',
+          padding: '10px',
+          fontSize: '0.9rem',
+          fontWeight: '600'
+        }}
+      >
+        + Add to Meal
+      </button>
+    </div>
+  );
+
   return (
     <div className="page">
       <div className="page-header">
-        <h1 className="page-title">Log New Meal</h1>
-        <p className="page-subtitle">Search and add foods to track your nutrition</p>
-      </div>
-
-      {/* Meal Details */}
-      <div className="card mb-2">
-        <h2 className="mb-2">Meal Details</h2>
-        <div className="form-group">
-          <label>Meal Name *</label>
-          <input
-            type="text"
-            className="form-control"
-            placeholder="e.g., Breakfast, Post-workout meal"
-            value={mealData.name}
-            onChange={(e) => setMealData({ ...mealData, name: e.target.value })}
-          />
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-          <div className="form-group">
-            <label>Meal Type *</label>
-            <select
-              className="form-control"
-              value={mealData.meal_type}
-              onChange={(e) => setMealData({ ...mealData, meal_type: e.target.value })}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+          <div>
+            <h1 className="page-title">🍽️ Log New Meal</h1>
+            <p className="page-subtitle">Search and add foods from Open Food Facts database</p>
+          </div>
+          {selectedFoods.length > 0 && (
+            <button
+              className="btn btn-primary"
+              onClick={() => setShowMealForm(true)}
+              style={{ fontSize: '0.9rem' }}
             >
-              <option value="breakfast">Breakfast</option>
-              <option value="lunch">Lunch</option>
-              <option value="dinner">Dinner</option>
-              <option value="snack">Snack</option>
-            </select>
-          </div>
-
-          <div className="form-group">
-            <label>Date *</label>
-            <input
-              type="date"
-              className="form-control"
-              value={mealData.meal_date}
-              onChange={(e) => setMealData({ ...mealData, meal_date: e.target.value })}
-            />
-          </div>
-        </div>
-
-        <div className="form-group">
-          <label>Notes (optional)</label>
-          <textarea
-            className="form-control"
-            placeholder="Add any notes about this meal..."
-            rows="2"
-            value={mealData.notes}
-            onChange={(e) => setMealData({ ...mealData, notes: e.target.value })}
-          />
+              Review & Save ({selectedFoods.length} items)
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Food Search */}
-      <div className="card mb-2">
-        <h2 className="mb-2">Search Foods</h2>
+      {/* Search Bar - Prominent at top */}
+      <div className="card mb-2" style={{ position: 'sticky', top: '10px', zIndex: 10, boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
         <form onSubmit={handleSearch}>
-          <div style={{ display: 'flex', gap: '10px' }}>
-            <input
-              type="text"
-              className="form-control"
-              placeholder="Search for foods (e.g., chicken breast, apple, milk...)"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              style={{ flex: 1 }}
-            />
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+            <div style={{ position: 'relative', flex: 1 }}>
+              <span style={{ position: 'absolute', left: '15px', top: '50%', transform: 'translateY(-50%)', fontSize: '1.2rem' }}>
+                🔍
+              </span>
+              <input
+                type="text"
+                className="form-control"
+                placeholder="Search foods... (e.g., chicken breast, banana, whole milk)"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                style={{ 
+                  flex: 1,
+                  paddingLeft: '45px',
+                  height: '50px',
+                  fontSize: '1rem',
+                  borderRadius: '8px'
+                }}
+              />
+            </div>
             <button
               type="submit"
               className="btn btn-primary"
               disabled={searching || !searchQuery.trim()}
+              style={{ 
+                height: '50px',
+                minWidth: '120px',
+                fontSize: '1rem',
+                fontWeight: '600',
+                borderRadius: '8px'
+              }}
             >
-              {searching ? 'Searching...' : 'Search'}
+              {searching ? '⏳ Searching...' : 'Search'}
             </button>
           </div>
         </form>
-
-        {searchResults.length > 0 && (
-          <div style={{ marginTop: '20px' }}>
-            <h3 style={{ marginBottom: '10px' }}>Search Results</h3>
-            <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
-              {searchResults.map((product, idx) => (
-                <div
-                  key={idx}
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    padding: '15px',
-                    borderBottom: '1px solid #e9ecef',
-                    gap: '15px'
-                  }}
-                >
-                  <div style={{ display: 'flex', gap: '15px', alignItems: 'center', flex: 1 }}>
-                    {product.imageUrl && (
-                      <img
-                        src={product.imageUrl}
-                        alt={product.name}
-                        style={{ width: '60px', height: '60px', objectFit: 'cover', borderRadius: '4px' }}
-                      />
-                    )}
-                    <div style={{ flex: 1 }}>
-                      <h4 style={{ margin: 0, marginBottom: '5px' }}>{product.name}</h4>
-                      {product.brand && <p style={{ color: '#6c757d', margin: 0, fontSize: '0.9rem' }}>{product.brand}</p>}
-                      <div style={{ fontSize: '0.85rem', color: '#495057', marginTop: '5px' }}>
-                        Per 100g: {Math.round(product.nutrition.caloriesPer100g)}kcal | 
-                        P: {Math.round(product.nutrition.proteinPer100g)}g | 
-                        C: {Math.round(product.nutrition.carbsPer100g)}g | 
-                        F: {Math.round(product.nutrition.fatPer100g)}g
-                      </div>
-                    </div>
-                  </div>
-                  <button
-                    className="btn btn-primary"
-                    onClick={() => addFoodToMeal(product)}
-                    style={{ whiteSpace: 'nowrap' }}
-                  >
-                    Add
-                  </button>
-                </div>
-              ))}
-            </div>
+        
+        {error && (
+          <div style={{ 
+            marginTop: '15px', 
+            padding: '12px', 
+            backgroundColor: '#fff3cd', 
+            border: '1px solid #ffc107',
+            borderRadius: '6px',
+            color: '#856404',
+            fontSize: '0.9rem'
+          }}>
+            ⚠️ {error}
           </div>
         )}
       </div>
 
-      {/* Selected Foods */}
-      {selectedFoods.length > 0 && (
+      {/* Search Results */}
+      {searchResults.length > 0 && (
         <div className="card mb-2">
-          <h2 className="mb-2">Selected Foods ({selectedFoods.length})</h2>
-          <div>
-            {selectedFoods.map((food) => (
-              <div
-                key={food.id}
+          <h2 className="mb-2">🔎 Search Results ({searchResults.length})</h2>
+          {searchIsOffline && (
+            <p style={{ color: '#ff9800', marginBottom: '15px', fontSize: '0.9rem' }}>
+              📦 Showing offline results - Open Food Facts API is currently unavailable
+            </p>
+          )}
+          <div style={{ 
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', 
+            gap: '20px' 
+          }}>
+            {searchResults.map((product, idx) => (
+              <FoodCard key={idx} product={product} onAdd={addFoodToMeal} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Popular Foods - Show when no search results */}
+      {searchResults.length === 0 && !searching && popularFoods.length > 0 && (
+        <div className="card mb-2">
+          <h2 className="mb-2">✨ Common Foods</h2>
+          <p style={{ color: '#666', marginBottom: '15px', fontSize: '0.9rem' }}>
+            Browse common foods below or use the search bar above to find specific foods from Open Food Facts
+          </p>
+          <div style={{ 
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', 
+            gap: '20px' 
+          }}>
+            {popularFoods.map((product, idx) => (
+              <FoodCard key={idx} product={product} onAdd={addFoodToMeal} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* No Results Message */}
+      {searchResults.length === 0 && !searching && popularFoods.length === 0 && !error && (
+        <div className="card mb-2" style={{ textAlign: 'center', padding: '40px 20px' }}>
+          <div style={{ fontSize: '3rem', marginBottom: '15px' }}>🍽️</div>
+          <h3 style={{ marginBottom: '10px' }}>Start by searching for foods</h3>
+          <p style={{ color: '#666', fontSize: '0.95rem' }}>
+            Use the search bar above to find foods from the Open Food Facts database.
+            <br />
+            Try searching for foods like "chicken breast", "banana", "brown rice", etc.
+          </p>
+        </div>
+      )}
+
+      {/* Selected Foods Summary */}
+      {selectedFoods.length > 0 && !showMealForm && (
+        <div className="card mb-2" style={{ 
+          position: 'sticky', 
+          bottom: '10px', 
+          backgroundColor: '#f8f9fa',
+          border: '2px solid #4CAF50',
+          boxShadow: '0 -2px 10px rgba(0,0,0,0.1)'
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <h3 style={{ margin: 0, marginBottom: '5px', color: '#4CAF50' }}>
+                🛒 {selectedFoods.length} food{selectedFoods.length > 1 ? 's' : ''} added
+              </h3>
+              <div style={{ fontSize: '0.9rem', color: '#666' }}>
+                Total: {Math.round(totalNutrition.calories)} kcal | 
+                P: {Math.round(totalNutrition.protein)}g | 
+                C: {Math.round(totalNutrition.carbs)}g | 
+                F: {Math.round(totalNutrition.fat)}g
+              </div>
+            </div>
+            <button
+              className="btn btn-primary"
+              onClick={() => setShowMealForm(true)}
+              style={{ fontSize: '1rem', padding: '12px 24px' }}
+            >
+              Continue to Save →
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Meal Form Modal/View */}
+      {showMealForm && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.5)',
+          zIndex: 1000,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '20px'
+        }}>
+          <div style={{
+            backgroundColor: '#fff',
+            borderRadius: '12px',
+            maxWidth: '800px',
+            width: '100%',
+            maxHeight: '90vh',
+            overflow: 'auto',
+            padding: '30px',
+            boxShadow: '0 10px 40px rgba(0,0,0,0.2)'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <h2 style={{ margin: 0 }}>📝 Meal Details</h2>
+              <button
+                onClick={() => setShowMealForm(false)}
                 style={{
-                  padding: '15px',
-                  borderBottom: '1px solid #e9ecef',
+                  border: 'none',
+                  background: 'none',
+                  fontSize: '1.5rem',
+                  cursor: 'pointer',
+                  padding: '5px 10px'
                 }}
               >
-                <div className="flex-between" style={{ marginBottom: '10px' }}>
-                  <div>
-                    <h4 style={{ margin: 0 }}>{food.food_name}</h4>
-                    {food.brand && <p style={{ color: '#6c757d', margin: 0, fontSize: '0.9rem' }}>{food.brand}</p>}
-                  </div>
-                  <button
-                    className="btn btn-danger"
-                    onClick={() => removeFood(food.id)}
-                  >
-                    Remove
-                  </button>
-                </div>
+                ✕
+              </button>
+            </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '10px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <label style={{ margin: 0 }}>Quantity:</label>
+            {/* Meal Form */}
+            <div className="form-group">
+              <label>Meal Name *</label>
+              <input
+                type="text"
+                className="form-control"
+                placeholder="e.g., Breakfast, Post-workout meal, Lunch"
+                value={mealData.name}
+                onChange={(e) => setMealData({ ...mealData, name: e.target.value })}
+                style={{ height: '45px', fontSize: '1rem' }}
+              />
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+              <div className="form-group">
+                <label>Meal Type *</label>
+                <select
+                  className="form-control"
+                  value={mealData.meal_type}
+                  onChange={(e) => setMealData({ ...mealData, meal_type: e.target.value })}
+                  style={{ height: '45px', fontSize: '1rem' }}
+                >
+                  <option value="breakfast">🌅 Breakfast</option>
+                  <option value="lunch">🌞 Lunch</option>
+                  <option value="dinner">🌙 Dinner</option>
+                  <option value="snack">🍪 Snack</option>
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label>Date *</label>
+                <input
+                  type="date"
+                  className="form-control"
+                  value={mealData.meal_date}
+                  onChange={(e) => setMealData({ ...mealData, meal_date: e.target.value })}
+                  style={{ height: '45px', fontSize: '1rem' }}
+                />
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label>Notes (optional)</label>
+              <textarea
+                className="form-control"
+                placeholder="Add any notes about this meal..."
+                rows="3"
+                value={mealData.notes}
+                onChange={(e) => setMealData({ ...mealData, notes: e.target.value })}
+                style={{ fontSize: '1rem' }}
+              />
+            </div>
+
+            <hr style={{ margin: '20px 0' }} />
+            <hr style={{ margin: '20px 0' }} />
+
+            {/* Selected Foods Review */}
+            <h3 style={{ marginBottom: '15px' }}>Selected Foods ({selectedFoods.length})</h3>
+            <div style={{ maxHeight: '300px', overflowY: 'auto', marginBottom: '20px' }}>
+              {selectedFoods.map((food) => (
+                <div
+                  key={food.id}
+                  style={{
+                    padding: '15px',
+                    borderBottom: '1px solid #e9ecef',
+                    backgroundColor: '#f8f9fa',
+                    marginBottom: '10px',
+                    borderRadius: '8px'
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '10px' }}>
+                    <div>
+                      <h4 style={{ margin: 0, fontSize: '1rem' }}>{food.food_name}</h4>
+                      {food.brand && <p style={{ color: '#6c757d', margin: 0, fontSize: '0.85rem' }}>{food.brand}</p>}
+                    </div>
+                    <button
+                      className="btn btn-danger"
+                      onClick={() => removeFood(food.id)}
+                      style={{ padding: '5px 12px', fontSize: '0.85rem' }}
+                    >
+                      Remove
+                    </button>
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+                    <label style={{ margin: 0, fontSize: '0.9rem', fontWeight: '600' }}>Quantity:</label>
                     <input
                       type="number"
                       className="form-control"
@@ -304,65 +616,74 @@ const MealCreate = () => {
                       onChange={(e) => updateFoodQuantity(food.id, e.target.value)}
                       min="0"
                       step="1"
-                      style={{ width: '100px' }}
+                      style={{ width: '100px', height: '35px' }}
                     />
-                    <span>{food.unit}</span>
+                    <span style={{ fontSize: '0.9rem' }}>{food.unit}</span>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '15px', fontSize: '0.85rem', color: '#555' }}>
+                    <span><strong>{food.calories}</strong> kcal</span>
+                    <span>P: <strong>{food.protein}g</strong></span>
+                    <span>C: <strong>{food.carbs}g</strong></span>
+                    <span>F: <strong>{food.fat}g</strong></span>
                   </div>
                 </div>
+              ))}
+            </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', gap: '10px', fontSize: '0.9rem' }}>
-                  <div><strong>Calories:</strong> {food.calories}kcal</div>
-                  <div><strong>Protein:</strong> {food.protein}g</div>
-                  <div><strong>Carbs:</strong> {food.carbs}g</div>
-                  <div><strong>Fat:</strong> {food.fat}g</div>
-                  {food.fiber > 0 && <div><strong>Fiber:</strong> {food.fiber}g</div>}
+            {/* Total Nutrition Summary */}
+            <div style={{ backgroundColor: '#e8f5e9', padding: '20px', borderRadius: '8px', marginBottom: '20px' }}>
+              <h3 style={{ margin: 0, marginBottom: '15px', color: '#2e7d32' }}>📊 Total Nutrition</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '15px' }}>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: '1.8rem', fontWeight: 'bold', color: '#2e7d32' }}>
+                    {Math.round(totalNutrition.calories)}
+                  </div>
+                  <div style={{ fontSize: '0.85rem', color: '#666' }}>Calories</div>
+                </div>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: '1.8rem', fontWeight: 'bold', color: '#2e7d32' }}>
+                    {Math.round(totalNutrition.protein)}g
+                  </div>
+                  <div style={{ fontSize: '0.85rem', color: '#666' }}>Protein</div>
+                </div>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: '1.8rem', fontWeight: 'bold', color: '#2e7d32' }}>
+                    {Math.round(totalNutrition.carbs)}g
+                  </div>
+                  <div style={{ fontSize: '0.85rem', color: '#666' }}>Carbs</div>
+                </div>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: '1.8rem', fontWeight: 'bold', color: '#2e7d32' }}>
+                    {Math.round(totalNutrition.fat)}g
+                  </div>
+                  <div style={{ fontSize: '0.85rem', color: '#666' }}>Fat</div>
                 </div>
               </div>
-            ))}
-          </div>
+            </div>
 
-          {/* Total Nutrition */}
-          <div style={{ background: '#f8f9fa', padding: '15px', borderRadius: '4px', marginTop: '15px' }}>
-            <h3 style={{ marginBottom: '15px' }}>Total Nutrition</h3>
-            <div className="dashboard-grid">
-              <div className="stat-card">
-                <div className="value">{Math.round(totalNutrition.calories)}</div>
-                <div className="label">Calories</div>
-              </div>
-              <div className="stat-card">
-                <div className="value">{Math.round(totalNutrition.protein * 10) / 10}g</div>
-                <div className="label">Protein</div>
-              </div>
-              <div className="stat-card">
-                <div className="value">{Math.round(totalNutrition.carbs * 10) / 10}g</div>
-                <div className="label">Carbs</div>
-              </div>
-              <div className="stat-card">
-                <div className="value">{Math.round(totalNutrition.fat * 10) / 10}g</div>
-                <div className="label">Fat</div>
-              </div>
+            {/* Action Buttons */}
+            <div style={{ display: 'flex', gap: '15px' }}>
+              <button
+                className="btn btn-secondary"
+                onClick={() => setShowMealForm(false)}
+                disabled={loading}
+                style={{ flex: 1, height: '48px', fontSize: '1rem' }}
+              >
+                ← Back
+              </button>
+              <button
+                className="btn btn-primary"
+                onClick={handleSubmit}
+                disabled={loading || selectedFoods.length === 0 || !mealData.name.trim()}
+                style={{ flex: 2, height: '48px', fontSize: '1rem', fontWeight: '600' }}
+              >
+                {loading ? '💾 Saving...' : '✓ Save Meal'}
+              </button>
             </div>
           </div>
         </div>
       )}
-
-      {/* Action Buttons */}
-      <div className="flex-between">
-        <button
-          className="btn btn-secondary"
-          onClick={() => navigate('/meals')}
-          disabled={loading}
-        >
-          Cancel
-        </button>
-        <button
-          className="btn btn-primary"
-          onClick={handleSubmit}
-          disabled={loading || selectedFoods.length === 0 || !mealData.name.trim()}
-        >
-          {loading ? 'Saving...' : 'Log Meal'}
-        </button>
-      </div>
     </div>
   );
 };

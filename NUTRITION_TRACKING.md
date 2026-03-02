@@ -1,16 +1,25 @@
 # Nutrition Tracking with Open Food Facts Integration
 
 ## Overview
-The nutrition tracking system has been enhanced with Open Food Facts API integration, allowing users to search for food items from a comprehensive database and accurately track their macros (protein, carbs, fats) and calories.
+The nutrition tracking system has been enhanced with Open Food Facts API integration, allowing users to search for food items from a comprehensive database and accurately track their macros (protein, carbs, fats) and calories. **The app includes offline fallback data** so you can track nutrition even without internet access.
 
 ## Features
 
 ### 1. Food Search
 - Search through millions of food products from the Open Food Facts database
-- View product images, brands, and nutritional information
+- View product images, brands, Nutri-Score ratings, and nutritional information
 - See nutrition per 100g for accurate tracking
+- **Modern card-based UI** similar to Open Food Facts website
+- Browse popular foods without searching
 
-### 2. Meal Logging
+### 2. Offline Mode
+- **Automatic fallback to offline database** when API is unavailable
+- 12 common foods available offline (chicken, eggs, rice, etc.)
+- Accurate USDA-sourced nutrition data
+- Visual indicator when using offline data
+- No functionality loss during network issues
+
+### 3. Meal Logging
 - Create custom meals with multiple food items
 - Specify portion sizes for each food
 - Automatic calculation of total nutrition
@@ -44,10 +53,17 @@ The nutrition tracking system has been enhanced with Open Food Facts API integra
 - `GET /api/foods/search?query={search_term}&page={page}&pageSize={size}`
   - Search for foods in Open Food Facts database
   - Returns product information with nutrition per 100g
+  - Timeout: 30 seconds
+  
+- `GET /api/foods/popular`
+  - Get popular/common foods
+  - Returns fallback offline data if API unavailable
+  - Always succeeds (never breaks UI)
   
 - `GET /api/foods/barcode/:barcode`
   - Get detailed food information by barcode
   - Returns complete nutrition data and ingredients
+  - Timeout: 30 seconds
 
 ### Meal Management
 - `GET /api/meals` - Get user's meals (with date filtering)
@@ -180,10 +196,39 @@ If you encounter errors when running the migration:
 2. Ensure you have proper permissions
 3. Fields may already exist (migration is idempotent)
 
-### API Search Not Working
-1. Check internet connection
-2. Verify server can reach openfoodfacts.org
-3. Check server logs for API errors
+### API Search Not Working / Timeout Errors
+
+**Symptoms:**
+- "timeout of 30000ms exceeded" errors
+- "Unable to connect to food database" messages
+- Search returns no results
+
+**Solutions:**
+
+1. **Check Internet Connection**
+   - Verify you can access https://world.openfoodfacts.org
+   - Test with: `curl "https://world.openfoodfacts.org/cgi/search.pl?search_terms=banana&json=1"`
+
+2. **Use Offline Mode**
+   - The app automatically provides 12 common foods when API is unavailable
+   - Look for the "📦 Offline Database" badge
+   - You can still log meals and track nutrition
+
+3. **Network Restrictions**
+   - Corporate/school networks may block the API
+   - Check with your network administrator
+   - Consider using a VPN if allowed
+
+4. **API is Down/Slow**
+   - Open Food Facts may be experiencing high load
+   - Try again in a few minutes
+   - Check https://status.openfoodfacts.org
+
+5. **Increase Timeout (Advanced)**
+   - Edit `server/controllers/foodSearchController.js`
+   - Change `timeout: 30000` to a higher value (e.g., 60000 for 60 seconds)
+
+**See [NETWORK_TROUBLESHOOTING.md](NETWORK_TROUBLESHOOTING.md) for detailed network troubleshooting.**
 
 ### Foods Not Saving
 1. Verify database migration completed

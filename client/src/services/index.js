@@ -39,6 +39,7 @@ export const foodService = {
   searchFoods: (query, page = 1, pageSize = 20) => 
     API.get('/foods/search', { params: { query, page, pageSize } }),
   getFoodByBarcode: (barcode) => API.get(`/foods/barcode/${barcode}`),
+  getPopularFoods: () => API.get('/foods/popular'),
 };
 
 export const progressService = {
