@@ -24,7 +24,6 @@ const Navbar = () => {
             <>
               <li><Link to="/dashboard">Dashboard</Link></li>
               <li><Link to="/workouts">Workouts</Link></li>
-              <li><Link to="/exercises">Exercises</Link></li>
               <li><Link to="/meals">Nutrition</Link></li>
               <li><Link to="/progress">Progress</Link></li>
               <li><Link to="/goals">Goals</Link></li>

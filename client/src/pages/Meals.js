@@ -49,12 +49,50 @@ const Meals = () => {
     }
   };
 
+  // Group meals by meal type
+  const groupMealsByType = () => {
+    const grouped = {
+      breakfast: [],
+      lunch: [],
+      dinner: [],
+      snack: []
+    };
+    
+    meals.forEach(meal => {
+      const mealType = (meal.meal_type || 'snack').toLowerCase();
+      if (grouped[mealType]) {
+        grouped[mealType].push(meal);
+      }
+    });
+    
+    return grouped;
+  };
+
+  // Calculate totals for a meal type
+  const calculateMealTypeStats = (mealTypeArray) => {
+    return mealTypeArray.reduce((totals, meal) => ({
+      calories: totals.calories + (meal.total_calories || 0),
+      protein: totals.protein + (meal.total_protein || 0),
+      carbs: totals.carbs + (meal.total_carbs || 0),
+      fat: totals.fat + (meal.total_fat || 0),
+    }), { calories: 0, protein: 0, carbs: 0, fat: 0 });
+  };
+
+  const mealTypeLabels = {
+    breakfast: 'Breakfast',
+    lunch: 'Lunch',
+    dinner: 'Dinner',
+    snack: 'Snacks'
+  };
+
+  const groupedMeals = groupMealsByType();
+
   return (
     <div className="page">
       <div className="page-header">
         <div>
           <h1 className="page-title">Nutrition Tracking</h1>
-          <p className="page-subtitle">Log and monitor your meals</p>
+          <p className="page-subtitle">Track your daily calories and macros</p>
         </div>
         <button
           className="btn btn-primary"
@@ -101,56 +139,185 @@ const Meals = () => {
         </div>
       )}
 
-      <div className="card mb-2">
-        <h2 className="mb-2">Meals for {new Date(selectedDate).toLocaleDateString()}</h2>
-        
-        {loading ? (
-          <div className="spinner"></div>
-        ) : meals.length === 0 ? (
-          <p className="text-muted text-center">No meals logged for this date</p>
-        ) : (
-          <div>
-            {meals.map((meal) => (
-              <div key={meal.id || meal._id} style={{ padding: '15px', borderBottom: '1px solid #e9ecef' }}>
-                <div className="flex-between">
-                  <div>
-                    <h3>{meal.name || meal.meal_name || 'Meal'}</h3>
-                    <span className="workout-badge scheduled">{meal.meal_type || meal.mealType || 'meal'}</span>
-                  </div>
-                  <button 
-                    className="btn btn-danger"
-                    onClick={() => handleDelete(meal.id || meal._id)}
-                  >
-                    Delete
-                  </button>
-                </div>
+      {loading ? (
+        <div className="spinner"></div>
+      ) : (
+        <div>
+          <h2 className="mb-2" style={{ fontSize: '1.5rem', fontWeight: '600' }}>
+            Meals for {new Date(selectedDate).toLocaleDateString('en-US', { month: 'numeric', day: 'numeric', year: 'numeric' })}
+          </h2>
+          
+          {meals.length === 0 ? (
+            <div className="card">
+              <p className="text-muted text-center">No meals logged for this date</p>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+              {Object.entries(groupedMeals).map(([mealType, mealsOfType]) => {
+                if (mealsOfType.length === 0) return null;
                 
-                {meal.foods && meal.foods.length > 0 && (
-                  <div style={{ marginTop: '10px' }}>
-                    <strong>Foods:</strong>
-                    <ul style={{ marginLeft: '20px', marginTop: '5px' }}>
-                      {meal.foods.map((food, idx) => (
-                        <li key={idx}>{food.food_name || food.name} - {food.calories} kcal</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
+                const stats = calculateMealTypeStats(mealsOfType);
                 
-                {(meal.totalNutrition || meal.total_calories) && (
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '10px', marginTop: '10px' }}>
-                    <div><strong>Calories:</strong> {Math.round(meal.totalNutrition?.calories || meal.total_calories || 0)}</div>
-                    <div><strong>Protein:</strong> {Math.round(meal.totalNutrition?.protein || meal.total_protein || 0)}g</div>
-                    <div><strong>Carbs:</strong> {Math.round(meal.totalNutrition?.carbs || meal.total_carbs || 0)}g</div>
-                    <div><strong>Fats:</strong> {Math.round(meal.totalNutrition?.fats || meal.total_fat || 0)}g</div>
+                return (
+                  <div key={mealType} className="card">
+                    <div style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: '10px',
+                      marginBottom: '15px',
+                      paddingBottom: '10px',
+                      borderBottom: '2px solid var(--primary-color)'
+                    }}>
+                      <h3 style={{ 
+                        fontSize: '1.3rem', 
+                        fontWeight: '600',
+                        margin: 0, 
+                        textTransform: 'uppercase',
+                        color: 'var(--primary-color)'
+                      }}>
+                        {mealTypeLabels[mealType]}
+                      </h3>
+                      <span className="workout-badge scheduled" style={{ 
+                        fontSize: '0.8rem',
+                        padding: '3px 10px'
+                      }}>
+                        {stats.calories} kcal
+                      </span>
+                    </div>
+
+                    {mealsOfType.map((meal) => (
+                      <div 
+                        key={meal.id || meal._id} 
+                        style={{ 
+                          marginBottom: '15px',
+                          paddingBottom: '15px',
+                          borderBottom: mealsOfType[mealsOfType.length - 1] === meal ? 'none' : '1px solid rgba(0, 229, 255, 0.1)'
+                        }}
+                      >
+                        <div className="flex-between" style={{ marginBottom: '10px' }}>
+                          <h4 style={{ 
+                            fontSize: '1.1rem', 
+                            fontWeight: '500',
+                            margin: 0,
+                            color: '#fff'
+                          }}>
+                            {meal.name || meal.meal_name || 'Meal'}
+                          </h4>
+                          <button 
+                            className="btn btn-danger"
+                            onClick={() => handleDelete(meal.id || meal._id)}
+                            style={{ padding: '6px 15px', fontSize: '0.9rem' }}
+                          >
+                            Delete
+                          </button>
+                        </div>
+                        
+                        {meal.foods && meal.foods.length > 0 && (
+                          <div style={{ marginBottom: '10px' }}>
+                            <strong style={{ color: 'var(--primary-color)', fontSize: '0.95rem' }}>Foods:</strong>
+                            <ul style={{ 
+                              marginLeft: '20px', 
+                              marginTop: '8px',
+                              listStyleType: 'disc',
+                              color: '#ccc'
+                            }}>
+                              {meal.foods.map((food, idx) => (
+                                <li key={idx} style={{ marginBottom: '5px' }}>
+                                  {food.food_name || food.name} - {food.calories} kcal
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        
+                        <div style={{ 
+                          display: 'grid', 
+                          gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', 
+                          gap: '15px',
+                          padding: '12px',
+                          backgroundColor: 'rgba(0, 229, 255, 0.05)',
+                          borderRadius: '8px'
+                        }}>
+                          <div>
+                            <div style={{ fontSize: '0.85rem', color: '#999', marginBottom: '3px' }}>Calories</div>
+                            <div style={{ fontSize: '1.1rem', fontWeight: '600', color: 'var(--primary-color)' }}>
+                              {Math.round(meal.total_calories || 0)}
+                            </div>
+                          </div>
+                          <div>
+                            <div style={{ fontSize: '0.85rem', color: '#999', marginBottom: '3px' }}>Protein</div>
+                            <div style={{ fontSize: '1.1rem', fontWeight: '600', color: '#fff' }}>
+                              {Math.round(meal.total_protein || 0)}g
+                            </div>
+                          </div>
+                          <div>
+                            <div style={{ fontSize: '0.85rem', color: '#999', marginBottom: '3px' }}>Carbs</div>
+                            <div style={{ fontSize: '1.1rem', fontWeight: '600', color: '#fff' }}>
+                              {Math.round(meal.total_carbs || 0)}g
+                            </div>
+                          </div>
+                          <div>
+                            <div style={{ fontSize: '0.85rem', color: '#999', marginBottom: '3px' }}>Fats</div>
+                            <div style={{ fontSize: '1.1rem', fontWeight: '600', color: '#fff' }}>
+                              {Math.round(meal.total_fat || 0)}g
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {meal.notes && (
+                          <p className="text-muted mt-1" style={{ 
+                            fontSize: '0.9rem',
+                            fontStyle: 'italic',
+                            marginTop: '10px',
+                            marginBottom: 0
+                          }}>
+                            {meal.notes}
+                          </p>
+                        )}
+                      </div>
+                    ))}
+
+                    {/* Meal type totals */}
+                    <div style={{
+                      marginTop: '15px',
+                      paddingTop: '15px',
+                      borderTop: '1px solid rgba(0, 229, 255, 0.3)',
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))',
+                      gap: '15px'
+                    }}>
+                      <div>
+                        <div style={{ fontSize: '0.85rem', color: '#999', marginBottom: '3px' }}>Total Calories</div>
+                        <div style={{ fontSize: '1.2rem', fontWeight: '700', color: 'var(--primary-color)' }}>
+                          {Math.round(stats.calories)}
+                        </div>
+                      </div>
+                      <div>
+                        <div style={{ fontSize: '0.85rem', color: '#999', marginBottom: '3px' }}>Total Protein</div>
+                        <div style={{ fontSize: '1.2rem', fontWeight: '700', color: '#fff' }}>
+                          {Math.round(stats.protein)}g
+                        </div>
+                      </div>
+                      <div>
+                        <div style={{ fontSize: '0.85rem', color: '#999', marginBottom: '3px' }}>Total Carbs</div>
+                        <div style={{ fontSize: '1.2rem', fontWeight: '700', color: '#fff' }}>
+                          {Math.round(stats.carbs)}g
+                        </div>
+                      </div>
+                      <div>
+                        <div style={{ fontSize: '0.85rem', color: '#999', marginBottom: '3px' }}>Total Fats</div>
+                        <div style={{ fontSize: '1.2rem', fontWeight: '700', color: '#fff' }}>
+                          {Math.round(stats.fat)}g
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                )}
-                
-                {meal.notes && <p className="text-muted mt-1"><em>{meal.notes}</em></p>}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };

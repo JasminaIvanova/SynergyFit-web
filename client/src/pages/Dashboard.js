@@ -18,6 +18,7 @@ const Dashboard = () => {
     try {
       const today = new Date();
       const startOfWeek = new Date(today.setDate(today.getDate() - today.getDay()));
+      const todayDate = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
       
       // Load recent workouts
       const workoutsRes = await workoutService.getWorkouts({ 
@@ -28,7 +29,8 @@ const Dashboard = () => {
 
       // Load today's meals
       const mealsRes = await mealService.getMeals({
-        startDate: new Date().toISOString(),
+        startDate: todayDate,
+        endDate: todayDate
       });
       setTodayMeals(mealsRes.data.meals || []);
 
@@ -67,14 +69,14 @@ const Dashboard = () => {
 
         <div className="stat-card">
           <h3>This Week</h3>
-          <div className="value">{recentWorkouts.filter(w => w.isCompleted).length}</div>
+          <div className="value">{recentWorkouts.filter(w => w.completed_date).length}</div>
           <div className="label">workouts completed</div>
         </div>
 
         <div className="stat-card">
           <h3>Weight Progress</h3>
           <div className="value">
-            {stats?.weightChange ? `${stats.weightChange > 0 ? '+' : ''}${stats.weightChange} kg` : 'N/A'}
+            {stats?.weightChange ? `${stats.weightChange > 0 ? '+' : ''}${stats.weightChange.toFixed(1)} kg` : 'N/A'}
           </div>
           <div className="label">last 30 days</div>
         </div>
@@ -82,7 +84,7 @@ const Dashboard = () => {
         <div className="stat-card">
           <h3>Today's Calories</h3>
           <div className="value">
-            {todayMeals.reduce((sum, meal) => sum + (meal.totalNutrition?.calories || 0), 0)}
+            {Math.round(todayMeals.reduce((sum, meal) => sum + (meal.total_calories || 0), 0))}
           </div>
           <div className="label">calories logged</div>
         </div>
@@ -100,19 +102,32 @@ const Dashboard = () => {
           ) : (
             <div>
               {recentWorkouts.map((workout) => (
-                <div key={workout._id} style={{ padding: '15px', borderBottom: '1px solid #e9ecef' }}>
+                <Link 
+                  key={workout.id} 
+                  to={`/workouts/${workout.id}`}
+                  style={{ 
+                    display: 'block',
+                    padding: '15px', 
+                    borderBottom: '1px solid var(--gray-dark)',
+                    textDecoration: 'none',
+                    color: 'inherit',
+                    transition: 'background 0.2s'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = 'var(--gray-darker)'}
+                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                >
                   <div className="flex-between">
                     <div>
-                      <h4>{workout.name}</h4>
-                      <p className="text-muted">
-                        {workout.exercises?.length || 0} exercises • {workout.totalDuration || 0} min
+                      <h4 style={{ margin: 0, marginBottom: '4px' }}>{workout.title || 'Untitled Workout'}</h4>
+                      <p className="text-muted" style={{ margin: 0, fontSize: '0.9rem' }}>
+                        {workout.exercises?.length || 0} exercises • {workout.duration_minutes || 0} min
                       </p>
                     </div>
-                    <span className={`workout-badge ${workout.isCompleted ? 'completed' : 'scheduled'}`}>
-                      {workout.isCompleted ? 'Completed' : 'Scheduled'}
+                    <span className={`workout-badge ${workout.completed_date ? 'completed' : 'scheduled'}`}>
+                      {workout.completed_date ? 'Completed' : 'Scheduled'}
                     </span>
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           )}
@@ -124,8 +139,8 @@ const Dashboard = () => {
           </div>
           
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            <Link to="/workouts" className="btn btn-primary">Log Workout</Link>
-            <Link to="/meals" className="btn btn-primary">Log Meal</Link>
+            <Link to="/workouts/session" className="btn btn-primary">Start Workout</Link>
+            <Link to="/meals/create" className="btn btn-primary">Log Meal</Link>
             <Link to="/progress" className="btn btn-primary">Update Progress</Link>
             <Link to="/social" className="btn btn-secondary">View Feed</Link>
           </div>

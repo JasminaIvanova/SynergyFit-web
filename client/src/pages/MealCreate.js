@@ -105,6 +105,7 @@ const MealCreate = () => {
       nutritionPer100g: product.nutrition,
     };
     setSelectedFoods([...selectedFoods, newFood]);
+    setShowMealForm(true); // Open meal details immediately
   };
 
   const updateFoodQuantity = (foodId, quantity) => {
@@ -189,19 +190,25 @@ const MealCreate = () => {
   // Food card component for cleaner rendering
   const FoodCard = ({ product, onAdd }) => (
     <div style={{
-      border: '1px solid #e0e0e0',
+      border: '1px solid rgba(0, 229, 255, 0.3)',
       borderRadius: '12px',
       padding: '15px',
-      backgroundColor: '#fff',
+      backgroundColor: 'var(--card-bg)',
       cursor: 'pointer',
       transition: 'all 0.2s',
       display: 'flex',
       flexDirection: 'column',
       height: '100%',
-      boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
+      boxShadow: '0 2px 8px rgba(0, 229, 255, 0.1)',
     }}
-    onMouseOver={(e) => e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)'}
-    onMouseOut={(e) => e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.05)'}
+    onMouseOver={(e) => {
+      e.currentTarget.style.boxShadow = '0 4px 16px rgba(0, 229, 255, 0.25)';
+      e.currentTarget.style.borderColor = 'var(--primary-color)';
+    }}
+    onMouseOut={(e) => {
+      e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 229, 255, 0.1)';
+      e.currentTarget.style.borderColor = 'rgba(0, 229, 255, 0.3)';
+    }}
     >
       
       <div style={{ flex: 1 }}>
@@ -215,7 +222,8 @@ const MealCreate = () => {
           display: '-webkit-box',
           WebkitLineClamp: 2,
           WebkitBoxOrient: 'vertical',
-          lineHeight: '1.3'
+          lineHeight: '1.3',
+          color: '#fff'
         }}>
           {product.name}
         </h4>
@@ -225,7 +233,7 @@ const MealCreate = () => {
             margin: 0, 
             marginBottom: '8px', 
             fontSize: '0.8rem', 
-            color: '#666',
+            color: '#999',
             overflow: 'hidden',
             textOverflow: 'ellipsis',
             whiteSpace: 'nowrap'
@@ -254,13 +262,13 @@ const MealCreate = () => {
         
         <div style={{ 
           fontSize: '0.8rem', 
-          color: '#444',
+          color: '#ccc',
           marginTop: '8px',
           padding: '8px',
-          backgroundColor: '#f8f9fa',
+          backgroundColor: 'rgba(0, 229, 255, 0.05)',
           borderRadius: '6px'
         }}>
-          <div style={{ fontWeight: '600', marginBottom: '4px' }}>Per 100g:</div>
+          <div style={{ fontWeight: '600', marginBottom: '4px', color: 'var(--primary-color)' }}>Per 100g:</div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px' }}>
             <div>{Math.round(product.nutrition.caloriesPer100g)} kcal</div>
             <div>{Math.round(product.nutrition.proteinPer100g)}g protein</div>
@@ -386,7 +394,7 @@ const MealCreate = () => {
       {searchResults.length === 0 && !searching && popularFoods.length > 0 && (
         <div className="card mb-2">
           <h2 className="mb-2">Common Foods</h2>
-          <p style={{ color: '#666', marginBottom: '15px', fontSize: '0.9rem' }}>
+          <p style={{ color: '#999', marginBottom: '15px', fontSize: '0.9rem' }}>
             Browse common foods below or use the search bar above to find specific foods from Open Food Facts
           </p>
           <div style={{ 
@@ -405,43 +413,11 @@ const MealCreate = () => {
       {searchResults.length === 0 && !searching && popularFoods.length === 0 && !error && (
         <div className="card mb-2" style={{ textAlign: 'center', padding: '40px 20px' }}>
           <h3 style={{ marginBottom: '10px' }}>Start by searching for foods</h3>
-          <p style={{ color: '#666', fontSize: '0.95rem' }}>
+          <p style={{ color: '#999', fontSize: '0.95rem' }}>
             Use the search bar above to find foods from the Open Food Facts database.
             <br />
             Try searching for foods like "chicken breast", "banana", "brown rice", etc.
           </p>
-        </div>
-      )}
-
-      {/* Selected Foods Summary */}
-      {selectedFoods.length > 0 && !showMealForm && (
-        <div className="card mb-2" style={{ 
-          position: 'sticky', 
-          bottom: '10px', 
-          backgroundColor: '#f8f9fa',
-          border: '2px solid #4CAF50',
-          boxShadow: '0 -2px 10px rgba(0,0,0,0.1)'
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div>
-              <h3 style={{ margin: 0, marginBottom: '5px', color: '#4CAF50' }}>
-                {selectedFoods.length} food{selectedFoods.length > 1 ? 's' : ''} added
-              </h3>
-              <div style={{ fontSize: '0.9rem', color: '#666' }}>
-                Total: {Math.round(totalNutrition.calories)} kcal | 
-                P: {Math.round(totalNutrition.protein)}g | 
-                C: {Math.round(totalNutrition.carbs)}g | 
-                F: {Math.round(totalNutrition.fat)}g
-              </div>
-            </div>
-            <button
-              className="btn btn-primary"
-              onClick={() => setShowMealForm(true)}
-              style={{ fontSize: '1rem', padding: '12px 24px' }}
-            >
-              Continue to Save
-            </button>
-          </div>
         </div>
       )}
 
@@ -453,7 +429,7 @@ const MealCreate = () => {
           left: 0,
           right: 0,
           bottom: 0,
-          backgroundColor: 'rgba(0,0,0,0.5)',
+          backgroundColor: 'rgba(0,0,0,0.8)',
           zIndex: 1000,
           display: 'flex',
           alignItems: 'center',
@@ -461,17 +437,18 @@ const MealCreate = () => {
           padding: '20px'
         }}>
           <div style={{
-            backgroundColor: '#fff',
+            backgroundColor: 'var(--card-bg)',
+            border: '1px solid var(--primary-color)',
             borderRadius: '12px',
             maxWidth: '800px',
             width: '100%',
             maxHeight: '90vh',
             overflow: 'auto',
             padding: '30px',
-            boxShadow: '0 10px 40px rgba(0,0,0,0.2)'
+            boxShadow: '0 10px 40px rgba(0, 229, 255, 0.3)'
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <h2 style={{ margin: 0 }}>Meal Details</h2>
+              <h2 style={{ margin: 0, color: '#fff' }}>Meal Details</h2>
               <button
                 onClick={() => setShowMealForm(false)}
                 style={{
@@ -479,7 +456,8 @@ const MealCreate = () => {
                   background: 'none',
                   fontSize: '1.5rem',
                   cursor: 'pointer',
-                  padding: '5px 10px'
+                  padding: '5px 10px',
+                  color: 'var(--primary-color)'
                 }}
               >
                 ✕
@@ -543,23 +521,23 @@ const MealCreate = () => {
             <hr style={{ margin: '20px 0' }} />
 
             {/* Selected Foods Review */}
-            <h3 style={{ marginBottom: '15px' }}>Selected Foods ({selectedFoods.length})</h3>
+            <h3 style={{ marginBottom: '15px', color: '#fff' }}>Selected Foods ({selectedFoods.length})</h3>
             <div style={{ maxHeight: '300px', overflowY: 'auto', marginBottom: '20px' }}>
               {selectedFoods.map((food) => (
                 <div
                   key={food.id}
                   style={{
                     padding: '15px',
-                    borderBottom: '1px solid #e9ecef',
-                    backgroundColor: '#f8f9fa',
+                    border: '1px solid rgba(0, 229, 255, 0.3)',
+                    backgroundColor: 'rgba(0, 229, 255, 0.05)',
                     marginBottom: '10px',
                     borderRadius: '8px'
                   }}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '10px' }}>
                     <div>
-                      <h4 style={{ margin: 0, fontSize: '1rem' }}>{food.food_name}</h4>
-                      {food.brand && <p style={{ color: '#6c757d', margin: 0, fontSize: '0.85rem' }}>{food.brand}</p>}
+                      <h4 style={{ margin: 0, fontSize: '1rem', color: '#fff' }}>{food.food_name}</h4>
+                      {food.brand && <p style={{ color: '#999', margin: 0, fontSize: '0.85rem' }}>{food.brand}</p>}
                     </div>
                     <button
                       className="btn btn-danger"
@@ -584,8 +562,8 @@ const MealCreate = () => {
                     <span style={{ fontSize: '0.9rem' }}>{food.unit}</span>
                   </div>
 
-                  <div style={{ display: 'flex', gap: '15px', fontSize: '0.85rem', color: '#555' }}>
-                    <span><strong>{food.calories}</strong> kcal</span>
+                  <div style={{ display: 'flex', gap: '15px', fontSize: '0.85rem', color: '#ccc' }}>
+                    <span><strong style={{ color: 'var(--primary-color)' }}>{food.calories}</strong> kcal</span>
                     <span>P: <strong>{food.protein}g</strong></span>
                     <span>C: <strong>{food.carbs}g</strong></span>
                     <span>F: <strong>{food.fat}g</strong></span>
@@ -595,32 +573,32 @@ const MealCreate = () => {
             </div>
 
             {/* Total Nutrition Summary */}
-            <div style={{ backgroundColor: '#e8f5e9', padding: '20px', borderRadius: '8px', marginBottom: '20px' }}>
-              <h3 style={{ margin: 0, marginBottom: '15px', color: '#2e7d32' }}>Total Nutrition</h3>
+            <div style={{ backgroundColor: 'rgba(0, 229, 255, 0.1)', border: '1px solid var(--primary-color)', padding: '20px', borderRadius: '8px', marginBottom: '20px' }}>
+              <h3 style={{ margin: 0, marginBottom: '15px', color: 'var(--primary-color)' }}>Total Nutrition</h3>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '15px' }}>
                 <div style={{ textAlign: 'center' }}>
-                  <div style={{ fontSize: '1.8rem', fontWeight: 'bold', color: '#2e7d32' }}>
+                  <div style={{ fontSize: '1.8rem', fontWeight: 'bold', color: 'var(--primary-color)' }}>
                     {Math.round(totalNutrition.calories)}
                   </div>
-                  <div style={{ fontSize: '0.85rem', color: '#666' }}>Calories</div>
+                  <div style={{ fontSize: '0.85rem', color: '#999' }}>Calories</div>
                 </div>
                 <div style={{ textAlign: 'center' }}>
-                  <div style={{ fontSize: '1.8rem', fontWeight: 'bold', color: '#2e7d32' }}>
+                  <div style={{ fontSize: '1.8rem', fontWeight: 'bold', color: '#fff' }}>
                     {Math.round(totalNutrition.protein)}g
                   </div>
-                  <div style={{ fontSize: '0.85rem', color: '#666' }}>Protein</div>
+                  <div style={{ fontSize: '0.85rem', color: '#999' }}>Protein</div>
                 </div>
                 <div style={{ textAlign: 'center' }}>
-                  <div style={{ fontSize: '1.8rem', fontWeight: 'bold', color: '#2e7d32' }}>
+                  <div style={{ fontSize: '1.8rem', fontWeight: 'bold', color: '#fff' }}>
                     {Math.round(totalNutrition.carbs)}g
                   </div>
-                  <div style={{ fontSize: '0.85rem', color: '#666' }}>Carbs</div>
+                  <div style={{ fontSize: '0.85rem', color: '#999' }}>Carbs</div>
                 </div>
                 <div style={{ textAlign: 'center' }}>
-                  <div style={{ fontSize: '1.8rem', fontWeight: 'bold', color: '#2e7d32' }}>
+                  <div style={{ fontSize: '1.8rem', fontWeight: 'bold', color: '#fff' }}>
                     {Math.round(totalNutrition.fat)}g
                   </div>
-                  <div style={{ fontSize: '0.85rem', color: '#666' }}>Fat</div>
+                  <div style={{ fontSize: '0.85rem', color: '#999' }}>Fat</div>
                 </div>
               </div>
             </div>
