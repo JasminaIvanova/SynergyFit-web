@@ -13,6 +13,7 @@ const MealCreate = () => {
   const [selectedFoods, setSelectedFoods] = useState([]);
   const [showMealForm, setShowMealForm] = useState(false);
   const [error, setError] = useState(null);
+  const [notification, setNotification] = useState({ show: false, message: '', type: '' }); // success, error, warning
   
   const [mealData, setMealData] = useState({
     name: '',
@@ -20,6 +21,13 @@ const MealCreate = () => {
     meal_date: new Date().toISOString().split('T')[0],
     notes: '',
   });
+
+  const showNotification = (message, type = 'success') => {
+    setNotification({ show: true, message, type });
+    setTimeout(() => {
+      setNotification({ show: false, message: '', type: '' });
+    }, 3000);
+  };
 
   useEffect(() => {
     // Show offline data immediately, then try to update with online data
@@ -139,13 +147,8 @@ const MealCreate = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!mealData.name.trim()) {
-      alert('Please enter a meal name');
-      return;
-    }
-
     if (selectedFoods.length === 0) {
-      alert('Please add at least one food item');
+      showNotification('Please add at least one food item', 'error');
       return;
     }
 
@@ -153,8 +156,18 @@ const MealCreate = () => {
     try {
       const totalNutrition = calculateTotalNutrition();
       
+      // Auto-generate meal name based on type
+      const mealTypeNames = {
+        breakfast: 'Breakfast',
+        lunch: 'Lunch',
+        dinner: 'Dinner',
+        snack: 'Snack'
+      };
+      const generatedName = mealTypeNames[mealData.meal_type] || 'Meal';
+      
       const mealPayload = {
         ...mealData,
+        name: generatedName,
         total_calories: totalNutrition.calories,
         total_protein: totalNutrition.protein,
         total_carbs: totalNutrition.carbs,
@@ -175,11 +188,11 @@ const MealCreate = () => {
       };
 
       await mealService.createMeal(mealPayload);
-      alert('Meal logged successfully!');
-      navigate('/meals');
+      showNotification('Meal logged successfully!', 'success');
+      setTimeout(() => navigate('/meals'), 1000);
     } catch (error) {
       console.error('Create meal error:', error);
-      alert('Error creating meal. Please try again.');
+      showNotification('Error creating meal. Please try again.', 'error');
     } finally {
       setLoading(false);
     }
@@ -299,6 +312,29 @@ const MealCreate = () => {
 
   return (
     <div className="page">
+      {/* Toast Notification */}
+      {notification.show && (
+        <div style={{
+          position: 'fixed',
+          top: '20px',
+          right: '20px',
+          zIndex: 9999,
+          backgroundColor: notification.type === 'success' ? 'rgba(0, 229, 255, 0.95)' : 
+                          notification.type === 'error' ? 'rgba(255, 75, 75, 0.95)' : 
+                          'rgba(255, 193, 7, 0.95)',
+          color: notification.type === 'success' ? '#121212' : '#fff',
+          padding: '15px 25px',
+          borderRadius: '8px',
+          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3)',
+          fontWeight: '600',
+          fontSize: '1rem',
+          minWidth: '250px',
+          animation: 'slideIn 0.3s ease-out'
+        }}>
+          {notification.message}
+        </div>
+      )}
+
       <div className="page-header">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
           <div>
@@ -448,7 +484,7 @@ const MealCreate = () => {
             boxShadow: '0 10px 40px rgba(0, 229, 255, 0.3)'
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <h2 style={{ margin: 0, color: '#fff' }}>Meal Details</h2>
+              <h2 style={{ margin: 0, color: '#fff' }}>Complete Your Entry</h2>
               <button
                 onClick={() => setShowMealForm(false)}
                 style={{
@@ -465,18 +501,6 @@ const MealCreate = () => {
             </div>
 
             {/* Meal Form */}
-            <div className="form-group">
-              <label>Meal Name *</label>
-              <input
-                type="text"
-                className="form-control"
-                placeholder="e.g., Breakfast, Post-workout meal, Lunch"
-                value={mealData.name}
-                onChange={(e) => setMealData({ ...mealData, name: e.target.value })}
-                style={{ height: '45px', fontSize: '1rem' }}
-              />
-            </div>
-
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
               <div className="form-group">
                 <label>Meal Type *</label>
@@ -484,7 +508,12 @@ const MealCreate = () => {
                   className="form-control"
                   value={mealData.meal_type}
                   onChange={(e) => setMealData({ ...mealData, meal_type: e.target.value })}
-                  style={{ height: '45px', fontSize: '1rem' }}
+                  style={{ 
+                    height: '45px', 
+                    fontSize: '1rem',
+                    padding: '10px 15px',
+                    lineHeight: '1.5'
+                  }}
                 >
                   <option value="breakfast">Breakfast</option>
                   <option value="lunch">Lunch</option>
@@ -505,20 +534,7 @@ const MealCreate = () => {
               </div>
             </div>
 
-            <div className="form-group">
-              <label>Notes (optional)</label>
-              <textarea
-                className="form-control"
-                placeholder="Add any notes about this meal..."
-                rows="3"
-                value={mealData.notes}
-                onChange={(e) => setMealData({ ...mealData, notes: e.target.value })}
-                style={{ fontSize: '1rem' }}
-              />
-            </div>
-
-            <hr style={{ margin: '20px 0' }} />
-            <hr style={{ margin: '20px 0' }} />
+            <hr style={{ margin: '20px 0', border: 'none', borderTop: '1px solid rgba(0, 229, 255, 0.2)' }} />
 
             {/* Selected Foods Review */}
             <h3 style={{ marginBottom: '15px', color: '#fff' }}>Selected Foods ({selectedFoods.length})</h3>
@@ -616,7 +632,7 @@ const MealCreate = () => {
               <button
                 className="btn btn-primary"
                 onClick={handleSubmit}
-                disabled={loading || selectedFoods.length === 0 || !mealData.name.trim()}
+                disabled={loading || selectedFoods.length === 0}
                 style={{ flex: 2, height: '48px', fontSize: '1rem', fontWeight: '600' }}
               >
                 {loading ? 'Saving...' : 'Save Meal'}

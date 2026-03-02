@@ -8,6 +8,16 @@ const Meals = () => {
   const [dailyStats, setDailyStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [notification, setNotification] = useState({ show: false, message: '', type: '' });
+  const [deleteConfirm, setDeleteConfirm] = useState({ show: false, id: null, name: '' });
+  const [editingFood, setEditingFood] = useState({ mealId: null, foodIndex: null });
+
+  const showNotification = (message, type = 'success') => {
+    setNotification({ show: true, message, type });
+    setTimeout(() => {
+      setNotification({ show: false, message: '', type: '' });
+    }, 3000);
+  };
 
   useEffect(() => {
     loadMeals();
@@ -37,15 +47,110 @@ const Meals = () => {
     }
   };
 
-  const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this meal?')) {
-      try {
-        await mealService.deleteMeal(id);
-        loadMeals();
-        loadDailyStats();
-      } catch (error) {
-        console.error('Error deleting meal:', error);
-      }
+  const handleDeleteClick = (id, name) => {
+    setDeleteConfirm({ show: true, id, name });
+  };
+
+  const confirmDelete = async () => {
+    try {
+      await mealService.deleteMeal(deleteConfirm.id);
+      showNotification('Meal deleted successfully', 'success');
+      loadMeals();
+      loadDailyStats();
+    } catch (error) {
+      console.error('Error deleting meal:', error);
+      showNotification('Error deleting meal', 'error');
+    } finally {
+      setDeleteConfirm({ show: false, id: null, name: '' });
+    }
+  };
+
+  const cancelDelete = () => {
+    setDeleteConfirm({ show: false, id: null, name: '' });
+  };
+
+  const handleDeleteFood = async (mealId, foodIndex, foodName) => {
+    const meal = meals.find(m => (m.id || m._id) === mealId);
+    if (!meal || !meal.foods) return;
+
+    const updatedFoods = meal.foods.filter((_, idx) => idx !== foodIndex);
+    
+    // If no foods left, delete the entire meal
+    if (updatedFoods.length === 0) {
+      handleDeleteClick(mealId, foodName);
+      return;
+    }
+
+    // Recalculate totals
+    const totals = updatedFoods.reduce((sum, food) => ({
+      calories: sum.calories + (food.calories || 0),
+      protein: sum.protein + (food.protein || 0),
+      carbs: sum.carbs + (food.carbs || 0),
+      fat: sum.fat + (food.fat || 0)
+    }), { calories: 0, protein: 0, carbs: 0, fat: 0 });
+
+    try {
+      await mealService.updateMeal(mealId, {
+        ...meal,
+        foods: updatedFoods,
+        total_calories: totals.calories,
+        total_protein: totals.protein,
+        total_carbs: totals.carbs,
+        total_fat: totals.fat
+      });
+      showNotification('Food removed', 'success');
+      loadMeals();
+      loadDailyStats();
+    } catch (error) {
+      console.error('Error removing food:', error);
+      showNotification('Error removing food', 'error');
+    }
+  };
+
+  const handleUpdateFoodQuantity = async (mealId, foodIndex, newQuantity) => {
+    const meal = meals.find(m => (m.id || m._id) === mealId);
+    if (!meal || !meal.foods || !meal.foods[foodIndex]) return;
+
+    const food = meal.foods[foodIndex];
+    const oldQuantity = food.quantity || 100;
+    const ratio = newQuantity / oldQuantity;
+    
+    const updatedFood = {
+      ...food,
+      quantity: newQuantity,
+      calories: Math.round(food.calories * ratio),
+      protein: Math.round(food.protein * ratio * 10) / 10,
+      carbs: Math.round(food.carbs * ratio * 10) / 10,
+      fat: Math.round(food.fat * ratio * 10) / 10
+    };
+
+    const updatedFoods = [...meal.foods];
+    updatedFoods[foodIndex] = updatedFood;
+
+    // Recalculate totals
+    const totals = updatedFoods.reduce((sum, f) => ({
+      calories: sum.calories + (f.calories || 0),
+      protein: sum.protein + (f.protein || 0),
+      carbs: sum.carbs + (f.carbs || 0),
+      fat: sum.fat + (f.fat || 0)
+    }), { calories: 0, protein: 0, carbs: 0, fat: 0 });
+
+    try {
+      await mealService.updateMeal(mealId, {
+        ...meal,
+        foods: updatedFoods,
+        total_calories: totals.calories,
+        total_protein: totals.protein,
+        total_carbs: totals.carbs,
+        total_fat: totals.fat
+      });
+      showNotification('Quantity updated', 'success');
+      loadMeals();
+      loadDailyStats();
+      setEditingFood({ mealId: null, foodIndex: null });
+    } catch (error) {
+      console.error('Error updating food:', error);
+      showNotification('Error updating quantity', 'error');
     }
   };
 
@@ -89,6 +194,76 @@ const Meals = () => {
 
   return (
     <div className="page">
+      {/* Toast Notification */}
+      {notification.show && (
+        <div style={{
+          position: 'fixed',
+          top: '20px',
+          right: '20px',
+          zIndex: 9999,
+          backgroundColor: notification.type === 'success' ? 'rgba(0, 229, 255, 0.95)' : 
+                          notification.type === 'error' ? 'rgba(255, 75, 75, 0.95)' : 
+                          'rgba(255, 193, 7, 0.95)',
+          color: notification.type === 'success' ? '#121212' : '#fff',
+          padding: '15px 25px',
+          borderRadius: '8px',
+          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3)',
+          fontWeight: '600',
+          fontSize: '1rem',
+          minWidth: '250px'
+        }}>
+          {notification.message}
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirm.show && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.8)',
+          zIndex: 9998,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '20px'
+        }}>
+          <div style={{
+            backgroundColor: 'var(--card-bg)',
+            border: '2px solid var(--primary-color)',
+            borderRadius: '12px',
+            padding: '30px',
+            maxWidth: '450px',
+            width: '100%',
+            boxShadow: '0 10px 40px rgba(0, 229, 255, 0.3)'
+          }}>
+            <h3 style={{ marginBottom: '15px', color: '#fff' }}>Delete Meal?</h3>
+            <p style={{ marginBottom: '25px', color: '#ccc', fontSize: '1rem' }}>
+              Are you sure you want to delete <strong style={{ color: 'var(--primary-color)' }}>{deleteConfirm.name}</strong>? This action cannot be undone.
+            </p>
+            <div style={{ display: 'flex', gap: '15px', justifyContent: 'flex-end' }}>
+              <button
+                className="btn btn-secondary"
+                onClick={cancelDelete}
+                style={{ minWidth: '100px' }}
+              >
+                Cancel
+              </button>
+              <button
+                className="btn btn-danger"
+                onClick={confirmDelete}
+                style={{ minWidth: '100px' }}
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="page-header">
         <div>
           <h1 className="page-title">Nutrition Tracking</h1>
@@ -163,154 +338,193 @@ const Meals = () => {
                     <div style={{ 
                       display: 'flex', 
                       alignItems: 'center', 
-                      gap: '10px',
+                      justifyContent: 'space-between',
                       marginBottom: '15px',
                       paddingBottom: '10px',
                       borderBottom: '2px solid var(--primary-color)'
                     }}>
-                      <h3 style={{ 
-                        fontSize: '1.3rem', 
-                        fontWeight: '600',
-                        margin: 0, 
-                        textTransform: 'uppercase',
-                        color: 'var(--primary-color)'
-                      }}>
-                        {mealTypeLabels[mealType]}
-                      </h3>
-                      <span className="workout-badge scheduled" style={{ 
-                        fontSize: '0.8rem',
-                        padding: '3px 10px'
-                      }}>
-                        {stats.calories} kcal
-                      </span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <h3 style={{ 
+                          fontSize: '1.3rem', 
+                          fontWeight: '600',
+                          margin: 0, 
+                          textTransform: 'uppercase',
+                          color: 'var(--primary-color)'
+                        }}>
+                          {mealTypeLabels[mealType]}
+                        </h3>
+                      </div>
+                      <div style={{ display: 'flex', gap: '12px', fontSize: '0.9rem' }}>
+                        <span style={{ color: '#ccc' }}>
+                          <strong style={{ color: 'var(--primary-color)', fontSize: '1.1rem' }}>
+                            {Math.round(stats.calories)}
+                          </strong> kcal
+                        </span>
+                        <span style={{ color: '#999' }}>|</span>
+                        <span style={{ color: '#ccc' }}>
+                          P: <strong>{Math.round(stats.protein)}</strong>g
+                        </span>
+                        <span style={{ color: '#ccc' }}>
+                          C: <strong>{Math.round(stats.carbs)}</strong>g
+                        </span>
+                        <span style={{ color: '#ccc' }}>
+                          F: <strong>{Math.round(stats.fat)}</strong>g
+                        </span>
+                      </div>
                     </div>
 
-                    {mealsOfType.map((meal) => (
+                    {mealsOfType.map((meal, mealIdx) => (
                       <div 
                         key={meal.id || meal._id} 
                         style={{ 
-                          marginBottom: '15px',
-                          paddingBottom: '15px',
-                          borderBottom: mealsOfType[mealsOfType.length - 1] === meal ? 'none' : '1px solid rgba(0, 229, 255, 0.1)'
+                          marginBottom: mealIdx === mealsOfType.length - 1 ? '0' : '15px',
+                          paddingBottom: mealIdx === mealsOfType.length - 1 ? '0' : '15px',
+                          borderBottom: mealIdx === mealsOfType.length - 1 ? 'none' : '1px solid rgba(0, 229, 255, 0.15)'
                         }}
                       >
-                        <div className="flex-between" style={{ marginBottom: '10px' }}>
-                          <h4 style={{ 
-                            fontSize: '1.1rem', 
-                            fontWeight: '500',
-                            margin: 0,
-                            color: '#fff'
-                          }}>
-                            {meal.name || meal.meal_name || 'Meal'}
-                          </h4>
-                          <button 
-                            className="btn btn-danger"
-                            onClick={() => handleDelete(meal.id || meal._id)}
-                            style={{ padding: '6px 15px', fontSize: '0.9rem' }}
-                          >
-                            Delete
-                          </button>
-                        </div>
-                        
                         {meal.foods && meal.foods.length > 0 && (
-                          <div style={{ marginBottom: '10px' }}>
-                            <strong style={{ color: 'var(--primary-color)', fontSize: '0.95rem' }}>Foods:</strong>
-                            <ul style={{ 
-                              marginLeft: '20px', 
-                              marginTop: '8px',
-                              listStyleType: 'disc',
-                              color: '#ccc'
-                            }}>
-                              {meal.foods.map((food, idx) => (
-                                <li key={idx} style={{ marginBottom: '5px' }}>
-                                  {food.food_name || food.name} - {food.calories} kcal
-                                </li>
-                              ))}
-                            </ul>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                            {meal.foods.map((food, idx) => {
+                              const isEditing = editingFood.mealId === (meal.id || meal._id) && editingFood.foodIndex === idx;
+                              
+                              return (
+                                <div 
+                                  key={idx} 
+                                  style={{ 
+                                    display: 'flex', 
+                                    justifyContent: 'space-between',
+                                    alignItems: 'center',
+                                    gap: '20px',
+                                    padding: '10px 12px',
+                                    backgroundColor: 'rgba(0, 229, 255, 0.03)',
+                                    borderRadius: '6px',
+                                    border: '1px solid rgba(0, 229, 255, 0.1)',
+                                    position: 'relative',
+                                    transition: 'all 0.2s'
+                                  }}
+                                  onMouseEnter={(e) => {
+                                    e.currentTarget.style.backgroundColor = 'rgba(0, 229, 255, 0.08)';
+                                    e.currentTarget.style.borderColor = 'rgba(0, 229, 255, 0.3)';
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    e.currentTarget.style.backgroundColor = 'rgba(0, 229, 255, 0.03)';
+                                    e.currentTarget.style.borderColor = 'rgba(0, 229, 255, 0.1)';
+                                  }}
+                                >
+                                  <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                    <div style={{ flex: 1 }}>
+                                      <span style={{ color: '#fff', fontSize: '0.95rem', fontWeight: '500' }}>
+                                        {food.food_name || food.name}
+                                      </span>
+                                      {food.brand && (
+                                        <span style={{ color: '#999', fontSize: '0.85rem', marginLeft: '8px' }}>
+                                          ({food.brand})
+                                        </span>
+                                      )}
+                                    </div>
+                                    
+                                    {/* Editable Quantity */}
+                                    <div 
+                                      style={{ 
+                                        display: 'flex', 
+                                        alignItems: 'center', 
+                                        gap: '6px',
+                                        cursor: 'pointer'
+                                      }}
+                                      onClick={() => setEditingFood({ mealId: meal.id || meal._id, foodIndex: idx })}
+                                    >
+                                      {isEditing ? (
+                                        <input
+                                          type="number"
+                                          defaultValue={food.quantity}
+                                          onBlur={(e) => {
+                                            const newQty = parseFloat(e.target.value);
+                                            if (newQty > 0) {
+                                              handleUpdateFoodQuantity(meal.id || meal._id, idx, newQty);
+                                            } else {
+                                              setEditingFood({ mealId: null, foodIndex: null });
+                                            }
+                                          }}
+                                          onKeyDown={(e) => {
+                                            if (e.key === 'Enter') {
+                                              e.target.blur();
+                                            }
+                                            if (e.key === 'Escape') {
+                                              setEditingFood({ mealId: null, foodIndex: null });
+                                            }
+                                          }}
+                                          autoFocus
+                                          style={{
+                                            width: '60px',
+                                            padding: '4px 8px',
+                                            fontSize: '0.85rem',
+                                            backgroundColor: 'var(--card-bg)',
+                                            color: 'var(--primary-color)',
+                                            border: '1px solid var(--primary-color)',
+                                            borderRadius: '4px',
+                                            textAlign: 'center'
+                                          }}
+                                        />
+                                      ) : (
+                                        <span 
+                                          style={{ 
+                                            color: 'var(--primary-color)', 
+                                            fontSize: '0.9rem',
+                                            fontWeight: '600',
+                                            minWidth: '50px',
+                                            textAlign: 'right',
+                                            padding: '4px 8px',
+                                            borderRadius: '4px',
+                                            backgroundColor: 'rgba(0, 229, 255, 0.1)'
+                                          }}
+                                          title="Click to edit"
+                                        >
+                                          {food.quantity}g
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                  
+                                  <div style={{ 
+                                    display: 'flex', 
+                                    alignItems: 'center',
+                                    gap: '15px',
+                                    fontSize: '0.85rem',
+                                    color: '#ccc'
+                                  }}>
+                                    <span><strong style={{ color: 'var(--primary-color)' }}>{food.calories}</strong> kcal</span>
+                                    <span>P: {Math.round(food.protein)}g</span>
+                                    <span>C: {Math.round(food.carbs)}g</span>
+                                    <span>F: {Math.round(food.fat)}g</span>
+                                    
+                                    {/* Delete button */}
+                                    <button
+                                      onClick={() => handleDeleteFood(meal.id || meal._id, idx, food.food_name || food.name)}
+                                      style={{
+                                        background: 'none',
+                                        border: 'none',
+                                        color: '#666',
+                                        fontSize: '1.1rem',
+                                        cursor: 'pointer',
+                                        padding: '4px 8px',
+                                        marginLeft: '8px',
+                                        transition: 'color 0.2s',
+                                        lineHeight: '1'
+                                      }}
+                                      onMouseEnter={(e) => e.currentTarget.style.color = '#ff4444'}
+                                      onMouseLeave={(e) => e.currentTarget.style.color = '#666'}
+                                      title="Delete this food"
+                                    >
+                                      ✕
+                                    </button>
+                                  </div>
+                                </div>
+                              );
+                            })}
                           </div>
-                        )}
-                        
-                        <div style={{ 
-                          display: 'grid', 
-                          gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', 
-                          gap: '15px',
-                          padding: '12px',
-                          backgroundColor: 'rgba(0, 229, 255, 0.05)',
-                          borderRadius: '8px'
-                        }}>
-                          <div>
-                            <div style={{ fontSize: '0.85rem', color: '#999', marginBottom: '3px' }}>Calories</div>
-                            <div style={{ fontSize: '1.1rem', fontWeight: '600', color: 'var(--primary-color)' }}>
-                              {Math.round(meal.total_calories || 0)}
-                            </div>
-                          </div>
-                          <div>
-                            <div style={{ fontSize: '0.85rem', color: '#999', marginBottom: '3px' }}>Protein</div>
-                            <div style={{ fontSize: '1.1rem', fontWeight: '600', color: '#fff' }}>
-                              {Math.round(meal.total_protein || 0)}g
-                            </div>
-                          </div>
-                          <div>
-                            <div style={{ fontSize: '0.85rem', color: '#999', marginBottom: '3px' }}>Carbs</div>
-                            <div style={{ fontSize: '1.1rem', fontWeight: '600', color: '#fff' }}>
-                              {Math.round(meal.total_carbs || 0)}g
-                            </div>
-                          </div>
-                          <div>
-                            <div style={{ fontSize: '0.85rem', color: '#999', marginBottom: '3px' }}>Fats</div>
-                            <div style={{ fontSize: '1.1rem', fontWeight: '600', color: '#fff' }}>
-                              {Math.round(meal.total_fat || 0)}g
-                            </div>
-                          </div>
-                        </div>
-                        
-                        {meal.notes && (
-                          <p className="text-muted mt-1" style={{ 
-                            fontSize: '0.9rem',
-                            fontStyle: 'italic',
-                            marginTop: '10px',
-                            marginBottom: 0
-                          }}>
-                            {meal.notes}
-                          </p>
                         )}
                       </div>
                     ))}
-
-                    {/* Meal type totals */}
-                    <div style={{
-                      marginTop: '15px',
-                      paddingTop: '15px',
-                      borderTop: '1px solid rgba(0, 229, 255, 0.3)',
-                      display: 'grid',
-                      gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))',
-                      gap: '15px'
-                    }}>
-                      <div>
-                        <div style={{ fontSize: '0.85rem', color: '#999', marginBottom: '3px' }}>Total Calories</div>
-                        <div style={{ fontSize: '1.2rem', fontWeight: '700', color: 'var(--primary-color)' }}>
-                          {Math.round(stats.calories)}
-                        </div>
-                      </div>
-                      <div>
-                        <div style={{ fontSize: '0.85rem', color: '#999', marginBottom: '3px' }}>Total Protein</div>
-                        <div style={{ fontSize: '1.2rem', fontWeight: '700', color: '#fff' }}>
-                          {Math.round(stats.protein)}g
-                        </div>
-                      </div>
-                      <div>
-                        <div style={{ fontSize: '0.85rem', color: '#999', marginBottom: '3px' }}>Total Carbs</div>
-                        <div style={{ fontSize: '1.2rem', fontWeight: '700', color: '#fff' }}>
-                          {Math.round(stats.carbs)}g
-                        </div>
-                      </div>
-                      <div>
-                        <div style={{ fontSize: '0.85rem', color: '#999', marginBottom: '3px' }}>Total Fats</div>
-                        <div style={{ fontSize: '1.2rem', fontWeight: '700', color: '#fff' }}>
-                          {Math.round(stats.fat)}g
-                        </div>
-                      </div>
-                    </div>
                   </div>
                 );
               })}

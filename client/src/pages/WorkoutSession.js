@@ -8,6 +8,7 @@ const WorkoutSession = () => {
   const [workout, setWorkout] = useState(null);
   const [loading, setLoading] = useState(true);
   const [startTime] = useState(new Date());
+  const [notification, setNotification] = useState({ show: false, message: '', type: '' });
   
   // Exercises in the workout session
   const [sessionExercises, setSessionExercises] = useState([]);
@@ -18,6 +19,13 @@ const WorkoutSession = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [loadingExercises, setLoadingExercises] = useState(false);
   const [showExerciseInfo, setShowExerciseInfo] = useState(null);
+
+  const showNotification = (message, type = 'success') => {
+    setNotification({ show: true, message, type });
+    setTimeout(() => {
+      setNotification({ show: false, message: '', type: '' });
+    }, 3000);
+  };
 
   useEffect(() => {
     if (id) {
@@ -180,7 +188,7 @@ const WorkoutSession = () => {
 
   const finishWorkout = async () => {
     if (sessionExercises.length === 0) {
-      alert('Add at least one exercise to finish the workout!');
+      showNotification('Add at least one exercise to finish the workout!', 'error');
       return;
     }
 
@@ -239,11 +247,11 @@ const WorkoutSession = () => {
       };
 
       const res = await workoutService.createWorkout(payload);
-      alert('Workout saved successfully!');
-      navigate('/workouts');
+      showNotification('Workout saved successfully!', 'success');
+      setTimeout(() => navigate('/workouts'), 1000);
     } catch (error) {
       console.error('Error saving workout:', error);
-      alert('Failed to save workout: ' + (error?.response?.data?.message || error.message));
+      showNotification('Failed to save workout: ' + (error?.response?.data?.message || error.message), 'error');
     }
   };
 
@@ -253,6 +261,29 @@ const WorkoutSession = () => {
 
   return (
     <div className="page" style={{ maxWidth: '1000px', paddingBottom: '40px' }}>
+      {/* Toast Notification */}
+      {notification.show && (
+        <div style={{
+          position: 'fixed',
+          top: '20px',
+          right: '20px',
+          zIndex: 9999,
+          backgroundColor: notification.type === 'success' ? 'rgba(0, 229, 255, 0.95)' : 
+                          notification.type === 'error' ? 'rgba(255, 75, 75, 0.95)' : 
+                          'rgba(255, 193, 7, 0.95)',
+          color: notification.type === 'success' ? '#121212' : '#fff',
+          padding: '15px 25px',
+          borderRadius: '8px',
+          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3)',
+          fontWeight: '600',
+          fontSize: '1rem',
+          minWidth: '250px',
+          animation: 'slideIn 0.3s ease-out'
+        }}>
+          {notification.message}
+        </div>
+      )}
+
       <div className="flex-between mb-2">
         <button className="btn btn-secondary" onClick={() => navigate('/workouts')}>
           ← Cancel

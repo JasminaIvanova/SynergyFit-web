@@ -6,6 +6,15 @@ const Workouts = () => {
   const [workouts, setWorkouts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
+  const [notification, setNotification] = useState({ show: false, message: '', type: '' });
+  const [deleteConfirm, setDeleteConfirm] = useState({ show: false, id: null, name: '' });
+
+  const showNotification = (message, type = 'success') => {
+    setNotification({ show: true, message, type });
+    setTimeout(() => {
+      setNotification({ show: false, message: '', type: '' });
+    }, 3000);
+  };
 
   useEffect(() => {
     loadWorkouts();
@@ -36,19 +45,100 @@ const Workouts = () => {
     }
   };
 
-  const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this workout?')) {
-      try {
-        await workoutService.deleteWorkout(id);
-        loadWorkouts();
-      } catch (error) {
-        console.error('Error deleting workout:', error);
-      }
+  const handleDeleteClick = (id, name) => {
+    setDeleteConfirm({ show: true, id, name });
+  };
+
+  const confirmDelete = async () => {
+    try {
+      await workoutService.deleteWorkout(deleteConfirm.id);
+      showNotification('Workout deleted successfully', 'success');
+      loadWorkouts();
+    } catch (error) {
+      console.error('Error deleting workout:', error);
+      showNotification('Error deleting workout', 'error');
+    } finally {
+      setDeleteConfirm({ show: false, id: null, name: '' });
     }
+  };
+
+  const cancelDelete = () => {
+    setDeleteConfirm({ show: false, id: null, name: '' });
   };
 
   return (
     <div className="page">
+      {/* Toast Notification */}
+      {notification.show && (
+        <div style={{
+          position: 'fixed',
+          top: '20px',
+          right: '20px',
+          zIndex: 9999,
+          backgroundColor: notification.type === 'success' ? 'rgba(0, 229, 255, 0.95)' : 
+                          notification.type === 'error' ? 'rgba(255, 75, 75, 0.95)' : 
+                          'rgba(255, 193, 7, 0.95)',
+          color: notification.type === 'success' ? '#121212' : '#fff',
+          padding: '15px 25px',
+          borderRadius: '8px',
+          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3)',
+          fontWeight: '600',
+          fontSize: '1rem',
+          minWidth: '250px',
+          animation: 'slideIn 0.3s ease-out'
+        }}>
+          {notification.message}
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirm.show && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.8)',
+          zIndex: 9998,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '20px'
+        }}>
+          <div style={{
+            backgroundColor: 'var(--card-bg)',
+            border: '2px solid var(--primary-color)',
+            borderRadius: '12px',
+            padding: '30px',
+            maxWidth: '450px',
+            width: '100%',
+            boxShadow: '0 10px 40px rgba(0, 229, 255, 0.3)'
+          }}>
+            <h3 style={{ marginBottom: '15px', color: '#fff' }}>Delete Workout?</h3>
+            <p style={{ marginBottom: '25px', color: '#ccc', fontSize: '1rem' }}>
+              Are you sure you want to delete <strong style={{ color: 'var(--primary-color)' }}>{deleteConfirm.name}</strong>? This action cannot be undone.
+            </p>
+            <div style={{ display: 'flex', gap: '15px', justifyContent: 'flex-end' }}>
+              <button
+                className="btn btn-secondary"
+                onClick={cancelDelete}
+                style={{ minWidth: '100px' }}
+              >
+                Cancel
+              </button>
+              <button
+                className="btn btn-danger"
+                onClick={confirmDelete}
+                style={{ minWidth: '100px' }}
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="page-header">
         <div className="flex-between">
           <div>
@@ -146,7 +236,7 @@ const Workouts = () => {
                 )}
                 <button 
                   className="btn btn-danger"
-                  onClick={() => handleDelete(workout.id)}
+                  onClick={() => handleDeleteClick(workout.id, workout.title)}
                 >
                   Delete
                 </button>
