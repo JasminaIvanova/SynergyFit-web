@@ -9,6 +9,7 @@ import Dashboard from './pages/Dashboard';
 import Workouts from './pages/Workouts';
 import WorkoutDetail from './pages/WorkoutDetail';
 import WorkoutCreate from './pages/WorkoutCreate';
+import WorkoutSession from './pages/WorkoutSession';
 import Exercises from './pages/Exercises';
 import ExerciseDetail from './pages/ExerciseDetail';
 import Meals from './pages/Meals';
@@ -47,6 +48,18 @@ function App() {
               <Route path="/workouts/new" element={
                 <PrivateRoute>
                   <WorkoutCreate />
+                </PrivateRoute>
+              } />
+
+              <Route path="/workouts/session" element={
+                <PrivateRoute>
+                  <WorkoutSession />
+                </PrivateRoute>
+              } />
+
+              <Route path="/workouts/session/:id" element={
+                <PrivateRoute>
+                  <WorkoutSession />
                 </PrivateRoute>
               } />
               

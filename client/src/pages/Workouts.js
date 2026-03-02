@@ -55,7 +55,14 @@ const Workouts = () => {
             <h1 className="page-title">My Workouts</h1>
             <p className="page-subtitle">Track your training sessions</p>
           </div>
-          <Link to="/workouts/new" className="btn btn-primary">Create Workout</Link>
+          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+            <Link to="/workouts/session" className="btn btn-success" style={{ fontSize: '1.1rem', padding: '14px 28px' }}>
+              🏋️ Start Workout
+            </Link>
+            <Link to="/workouts/new" className="btn btn-secondary">
+              Create Plan
+            </Link>
+          </div>
         </div>
       </div>
 
@@ -118,13 +125,23 @@ const Workouts = () => {
               </div>
 
               <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                <Link to={`/workouts/${workout.id}`} className="btn btn-primary">View</Link>
+                <Link to={`/workouts/${workout.id}`} className="btn btn-secondary">
+                  View Details
+                </Link>
+                {!workout.completed_date && (
+                  <Link 
+                    to={`/workouts/session/${workout.id}`}
+                    className="btn btn-primary"
+                  >
+                    🏋️ Start Session
+                  </Link>
+                )}
                 {!workout.completed_date && (
                   <button 
-                    className="btn btn-success"
+                    className="btn btn-outline"
                     onClick={() => handleComplete(workout.id)}
                   >
-                    Complete
+                    ✓ Mark Complete
                   </button>
                 )}
                 <button 
