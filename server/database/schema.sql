@@ -94,6 +94,7 @@ CREATE TABLE IF NOT EXISTS workout_exercises (
 CREATE TABLE IF NOT EXISTS meals (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    name VARCHAR(255),
     meal_type VARCHAR(50) NOT NULL,
     meal_date DATE NOT NULL,
     meal_time TIME,
@@ -101,6 +102,7 @@ CREATE TABLE IF NOT EXISTS meals (
     total_protein DECIMAL(6,2) DEFAULT 0,
     total_carbs DECIMAL(6,2) DEFAULT 0,
     total_fat DECIMAL(6,2) DEFAULT 0,
+    total_fiber DECIMAL(6,2) DEFAULT 0,
     notes TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -111,12 +113,15 @@ CREATE TABLE IF NOT EXISTS meal_foods (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     meal_id UUID NOT NULL REFERENCES meals(id) ON DELETE CASCADE,
     food_name VARCHAR(255) NOT NULL,
+    brand VARCHAR(255),
+    barcode VARCHAR(50),
     quantity DECIMAL(6,2) NOT NULL,
     unit VARCHAR(50) NOT NULL,
     calories INTEGER NOT NULL,
     protein DECIMAL(6,2) DEFAULT 0,
     carbs DECIMAL(6,2) DEFAULT 0,
     fat DECIMAL(6,2) DEFAULT 0,
+    fiber DECIMAL(6,2) DEFAULT 0,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
@@ -229,14 +234,29 @@ BEGIN
 END;
 $$ language 'plpgsql';
 
--- Apply Updated At Triggers
+-- Apply Updated At Triggers (Drop first to make idempotent)
+DROP TRIGGER IF EXISTS update_users_updated_at ON users;
 CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+DROP TRIGGER IF EXISTS update_exercises_updated_at ON exercises;
 CREATE TRIGGER update_exercises_updated_at BEFORE UPDATE ON exercises FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+DROP TRIGGER IF EXISTS update_workouts_updated_at ON workouts;
 CREATE TRIGGER update_workouts_updated_at BEFORE UPDATE ON workouts FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+DROP TRIGGER IF EXISTS update_meals_updated_at ON meals;
 CREATE TRIGGER update_meals_updated_at BEFORE UPDATE ON meals FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+DROP TRIGGER IF EXISTS update_progress_updated_at ON progress;
 CREATE TRIGGER update_progress_updated_at BEFORE UPDATE ON progress FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+DROP TRIGGER IF EXISTS update_posts_updated_at ON posts;
 CREATE TRIGGER update_posts_updated_at BEFORE UPDATE ON posts FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+DROP TRIGGER IF EXISTS update_goals_updated_at ON goals;
 CREATE TRIGGER update_goals_updated_at BEFORE UPDATE ON goals FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+DROP TRIGGER IF EXISTS update_post_comments_updated_at ON post_comments;
 CREATE TRIGGER update_post_comments_updated_at BEFORE UPDATE ON post_comments FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- Row Level Security (RLS) Policies
@@ -255,27 +275,35 @@ ALTER TABLE goals ENABLE ROW LEVEL SECURITY;
 ALTER TABLE goal_milestones ENABLE ROW LEVEL SECURITY;
 
 -- Users can read all user profiles
+DROP POLICY IF EXISTS "Users can read all profiles" ON users;
 CREATE POLICY "Users can read all profiles" ON users FOR SELECT USING (true);
 
 -- Users can update their own profile
+DROP POLICY IF EXISTS "Users can update own profile" ON users;
 CREATE POLICY "Users can update own profile" ON users FOR UPDATE USING (auth.uid() = id);
 
 -- Users can insert/read/delete their own follows
+DROP POLICY IF EXISTS "Users manage own follows" ON user_follows;
 CREATE POLICY "Users manage own follows" ON user_follows FOR ALL USING (auth.uid() = follower_id) WITH CHECK (auth.uid() = follower_id);
 
 -- Everyone can read public exercises
+DROP POLICY IF EXISTS "Read public exercises" ON exercises;
 CREATE POLICY "Read public exercises" ON exercises FOR SELECT USING (is_custom = false OR created_by = auth.uid());
 
 -- Users can manage their custom exercises
+DROP POLICY IF EXISTS "Manage own exercises" ON exercises;
 CREATE POLICY "Manage own exercises" ON exercises FOR ALL USING (auth.uid() = created_by) WITH CHECK (auth.uid() = created_by);
 
 -- Users can manage their own workouts
+DROP POLICY IF EXISTS "Manage own workouts" ON workouts;
 CREATE POLICY "Manage own workouts" ON workouts FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
 
 -- Users can read public workout templates
+DROP POLICY IF EXISTS "Read public workouts" ON workouts;
 CREATE POLICY "Read public workouts" ON workouts FOR SELECT USING (is_public = true OR user_id = auth.uid());
 
 -- Users can manage workout exercises for their workouts
+DROP POLICY IF EXISTS "Manage own workout exercises" ON workout_exercises;
 CREATE POLICY "Manage own workout exercises" ON workout_exercises FOR ALL USING (
     workout_id IN (SELECT id FROM workouts WHERE user_id = auth.uid())
 ) WITH CHECK (
@@ -283,9 +311,11 @@ CREATE POLICY "Manage own workout exercises" ON workout_exercises FOR ALL USING 
 );
 
 -- Users can manage their own meals
+DROP POLICY IF EXISTS "Manage own meals" ON meals;
 CREATE POLICY "Manage own meals" ON meals FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
 
 -- Users can manage meal foods for their meals
+DROP POLICY IF EXISTS "Manage own meal foods" ON meal_foods;
 CREATE POLICY "Manage own meal foods" ON meal_foods FOR ALL USING (
     meal_id IN (SELECT id FROM meals WHERE user_id = auth.uid())
 ) WITH CHECK (
@@ -293,32 +323,44 @@ CREATE POLICY "Manage own meal foods" ON meal_foods FOR ALL USING (
 );
 
 -- Users can manage their own progress entries
+DROP POLICY IF EXISTS "Manage own progress" ON progress;
 CREATE POLICY "Manage own progress" ON progress FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
 
 -- Users can read posts from people they follow and their own posts
+DROP POLICY IF EXISTS "Read relevant posts" ON posts;
 CREATE POLICY "Read relevant posts" ON posts FOR SELECT USING (
     user_id = auth.uid() OR 
     user_id IN (SELECT following_id FROM user_follows WHERE follower_id = auth.uid())
 );
 
 -- Users can manage their own posts
+DROP POLICY IF EXISTS "Manage own posts" ON posts;
 CREATE POLICY "Manage own posts" ON posts FOR INSERT WITH CHECK (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Update own posts" ON posts;
 CREATE POLICY "Update own posts" ON posts FOR UPDATE USING (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Delete own posts" ON posts;
 CREATE POLICY "Delete own posts" ON posts FOR DELETE USING (auth.uid() = user_id);
 
 -- Users can like any visible post
+DROP POLICY IF EXISTS "Manage post likes" ON post_likes;
 CREATE POLICY "Manage post likes" ON post_likes FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
 
 -- Users can comment on any visible post
+DROP POLICY IF EXISTS "Read all comments" ON post_comments;
 CREATE POLICY "Read all comments" ON post_comments FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Create comments" ON post_comments;
 CREATE POLICY "Create comments" ON post_comments FOR INSERT WITH CHECK (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Update own comments" ON post_comments;
 CREATE POLICY "Update own comments" ON post_comments FOR UPDATE USING (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Delete own comments" ON post_comments;
 CREATE POLICY "Delete own comments" ON post_comments FOR DELETE USING (auth.uid() = user_id);
 
 -- Users can manage their own goals
+DROP POLICY IF EXISTS "Manage own goals" ON goals;
 CREATE POLICY "Manage own goals" ON goals FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
 
 -- Users can manage milestones for their goals
+DROP POLICY IF EXISTS "Manage own goal milestones" ON goal_milestones;
 CREATE POLICY "Manage own goal milestones" ON goal_milestones FOR ALL USING (
     goal_id IN (SELECT id FROM goals WHERE user_id = auth.uid())
 ) WITH CHECK (

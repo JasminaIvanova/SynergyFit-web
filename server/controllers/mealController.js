@@ -68,12 +68,15 @@ exports.createMeal = async (req, res) => {
       const mealFoodsData = foods.map(food => ({
         meal_id: meal.id,
         food_name: food.food_name || food.name,
+        brand: food.brand,
+        barcode: food.barcode,
         quantity: food.quantity,
         unit: food.unit,
         calories: food.calories,
         protein: food.protein,
         carbs: food.carbs,
-        fat: food.fat
+        fat: food.fat,
+        fiber: food.fiber
       }));
 
       const { data: insertedFoods, error: foodsError } = await supabaseAdmin
@@ -179,12 +182,15 @@ exports.updateMeal = async (req, res) => {
         const mealFoodsData = foods.map(food => ({
           meal_id: meal.id,
           food_name: food.food_name || food.name,
+          brand: food.brand,
+          barcode: food.barcode,
           quantity: food.quantity,
           unit: food.unit,
           calories: food.calories,
           protein: food.protein,
           carbs: food.carbs,
-          fat: food.fat
+          fat: food.fat,
+          fiber: food.fiber
         }));
 
         const { data: insertedFoods } = await supabaseAdmin
@@ -260,7 +266,7 @@ exports.getDailyStats = async (req, res) => {
 
     const { data: meals, error } = await supabaseAdmin
       .from('meals')
-      .select('total_calories, total_protein, total_carbs, total_fat')
+      .select('total_calories, total_protein, total_carbs, total_fat, total_fiber')
       .eq('user_id', req.userId)
       .eq('meal_date', dateString);
 
@@ -274,6 +280,7 @@ exports.getDailyStats = async (req, res) => {
         protein: (totals.protein || 0) + (meal.total_protein || 0),
         carbs: (totals.carbs || 0) + (meal.total_carbs || 0),
         fats: (totals.fats || 0) + (meal.total_fat || 0),
+        fiber: (totals.fiber || 0) + (meal.total_fiber || 0),
       };
     }, {});
 

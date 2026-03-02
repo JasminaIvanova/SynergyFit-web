@@ -35,6 +35,12 @@ export const mealService = {
   getDailyStats: (date) => API.get('/meals/stats/daily', { params: { date } }),
 };
 
+export const foodService = {
+  searchFoods: (query, page = 1, pageSize = 20) => 
+    API.get('/foods/search', { params: { query, page, pageSize } }),
+  getFoodByBarcode: (barcode) => API.get(`/foods/barcode/${barcode}`),
+};
+
 export const progressService = {
   getProgress: (params) => API.get('/progress', { params }),
   getProgressById: (id) => API.get(`/progress/${id}`),

@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { mealService } from '../services';
 
 const Meals = () => {
+  const navigate = useNavigate();
   const [meals, setMeals] = useState([]);
   const [dailyStats, setDailyStats] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -50,8 +52,16 @@ const Meals = () => {
   return (
     <div className="page">
       <div className="page-header">
-        <h1 className="page-title">Nutrition Tracking</h1>
-        <p className="page-subtitle">Log and monitor your meals</p>
+        <div>
+          <h1 className="page-title">Nutrition Tracking</h1>
+          <p className="page-subtitle">Log and monitor your meals</p>
+        </div>
+        <button
+          className="btn btn-primary"
+          onClick={() => navigate('/meals/create')}
+        >
+          + Log Meal
+        </button>
       </div>
 
       <div className="card mb-2">
@@ -101,15 +111,15 @@ const Meals = () => {
         ) : (
           <div>
             {meals.map((meal) => (
-              <div key={meal._id} style={{ padding: '15px', borderBottom: '1px solid #e9ecef' }}>
+              <div key={meal.id || meal._id} style={{ padding: '15px', borderBottom: '1px solid #e9ecef' }}>
                 <div className="flex-between">
                   <div>
-                    <h3>{meal.name}</h3>
-                    <span className="workout-badge scheduled">{meal.mealType}</span>
+                    <h3>{meal.name || meal.meal_name || 'Meal'}</h3>
+                    <span className="workout-badge scheduled">{meal.meal_type || meal.mealType || 'meal'}</span>
                   </div>
                   <button 
                     className="btn btn-danger"
-                    onClick={() => handleDelete(meal._id)}
+                    onClick={() => handleDelete(meal.id || meal._id)}
                   >
                     Delete
                   </button>
@@ -120,18 +130,18 @@ const Meals = () => {
                     <strong>Foods:</strong>
                     <ul style={{ marginLeft: '20px', marginTop: '5px' }}>
                       {meal.foods.map((food, idx) => (
-                        <li key={idx}>{food.name} - {food.calories} kcal</li>
+                        <li key={idx}>{food.food_name || food.name} - {food.calories} kcal</li>
                       ))}
                     </ul>
                   </div>
                 )}
                 
-                {meal.totalNutrition && (
+                {(meal.totalNutrition || meal.total_calories) && (
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '10px', marginTop: '10px' }}>
-                    <div><strong>Calories:</strong> {Math.round(meal.totalNutrition.calories || 0)}</div>
-                    <div><strong>Protein:</strong> {Math.round(meal.totalNutrition.protein || 0)}g</div>
-                    <div><strong>Carbs:</strong> {Math.round(meal.totalNutrition.carbs || 0)}g</div>
-                    <div><strong>Fats:</strong> {Math.round(meal.totalNutrition.fats || 0)}g</div>
+                    <div><strong>Calories:</strong> {Math.round(meal.totalNutrition?.calories || meal.total_calories || 0)}</div>
+                    <div><strong>Protein:</strong> {Math.round(meal.totalNutrition?.protein || meal.total_protein || 0)}g</div>
+                    <div><strong>Carbs:</strong> {Math.round(meal.totalNutrition?.carbs || meal.total_carbs || 0)}g</div>
+                    <div><strong>Fats:</strong> {Math.round(meal.totalNutrition?.fats || meal.total_fat || 0)}g</div>
                   </div>
                 )}
                 

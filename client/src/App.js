@@ -12,6 +12,7 @@ import WorkoutCreate from './pages/WorkoutCreate';
 import Exercises from './pages/Exercises';
 import ExerciseDetail from './pages/ExerciseDetail';
 import Meals from './pages/Meals';
+import MealCreate from './pages/MealCreate';
 import Progress from './pages/Progress';
 import Social from './pages/Social';
 import Profile from './pages/Profile';
@@ -70,6 +71,12 @@ function App() {
               <Route path="/meals" element={
                 <PrivateRoute>
                   <Meals />
+                </PrivateRoute>
+              } />
+
+              <Route path="/meals/create" element={
+                <PrivateRoute>
+                  <MealCreate />
                 </PrivateRoute>
               } />
               
