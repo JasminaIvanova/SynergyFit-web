@@ -54,7 +54,7 @@ const Dashboard = () => {
   return (
     <div className="page">
       <div className="page-header">
-        <h1 className="page-title">Welcome back, {user?.name}! 👋</h1>
+        <h1 className="page-title">Welcome back, {user?.name}!</h1>
         <p className="page-subtitle">Here's your fitness overview</p>
       </div>
 
