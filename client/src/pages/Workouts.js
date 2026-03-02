@@ -57,7 +57,7 @@ const Workouts = () => {
           </div>
           <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
             <Link to="/workouts/session" className="btn btn-success" style={{ fontSize: '1.1rem', padding: '14px 28px' }}>
-              🏋️ Start Workout
+              Start Workout
             </Link>
             <Link to="/workouts/new" className="btn btn-secondary">
               Create Plan
@@ -133,7 +133,7 @@ const Workouts = () => {
                     to={`/workouts/session/${workout.id}`}
                     className="btn btn-primary"
                   >
-                    🏋️ Start Session
+                    Start Session
                   </Link>
                 )}
                 {!workout.completed_date && (
@@ -141,7 +141,7 @@ const Workouts = () => {
                     className="btn btn-outline"
                     onClick={() => handleComplete(workout.id)}
                   >
-                    ✓ Mark Complete
+                    Mark Complete
                   </button>
                 )}
                 <button 

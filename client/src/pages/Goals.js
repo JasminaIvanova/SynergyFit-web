@@ -149,7 +149,7 @@ const Goals = () => {
                         textDecoration: milestone.isCompleted ? 'line-through' : 'none',
                         color: milestone.isCompleted ? '#868e96' : '#212529'
                       }}>
-                        {milestone.title} {milestone.isCompleted && '✓'}
+                        {milestone.title}
                       </li>
                     ))}
                   </ul>

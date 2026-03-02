@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, Link } from 'react-router-dom';
 import { workoutService, exerciseDbService, exerciseService } from '../services';
 
 const WorkoutSession = () => {
@@ -17,6 +17,7 @@ const WorkoutSession = () => {
   const [availableExercises, setAvailableExercises] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [loadingExercises, setLoadingExercises] = useState(false);
+  const [showExerciseInfo, setShowExerciseInfo] = useState(null);
 
   useEffect(() => {
     if (id) {
@@ -29,7 +30,29 @@ const WorkoutSession = () => {
   const loadWorkout = async () => {
     try {
       const res = await workoutService.getWorkoutById(id);
-      setWorkout(res.data.workout);
+      const loadedWorkout = res.data.workout;
+      setWorkout(loadedWorkout);
+
+      // Load exercises from the workout if they exist
+      if (loadedWorkout?.exercises && Array.isArray(loadedWorkout.exercises)) {
+        const exercises = loadedWorkout.exercises.map((ex, idx) => ({
+          id: ex.id || `ex-${idx}`,
+          exerciseId: ex.exercise?.id || ex.exercise_id,
+          name: ex.exercise?.name || 'Exercise',
+          category: ex.exercise?.category || 'other',
+          muscleGroup: ex.exercise?.muscle_group || 'general',
+          difficulty: ex.exercise?.difficulty_level || 'intermediate',
+          equipment: ex.exercise?.equipment,
+          sets: Array(ex.sets || 3).fill(null).map((_, setIdx) => ({
+            id: setIdx + 1,
+            reps: ex.reps || 10,
+            weight: ex.weight || 0,
+            completed: false,
+            rest: 90
+          }))
+        }));
+        setSessionExercises(exercises);
+      }
     } catch (error) {
       console.error('Error loading workout:', error);
     } finally {
@@ -249,13 +272,13 @@ const WorkoutSession = () => {
             disabled={sessionExercises.length === 0}
             style={{ padding: '12px 28px', fontSize: '1rem' }}
           >
-            ✓ Finish Workout
+            Finish Workout
           </button>
         </div>
       </div>
 
       <div className="card mb-2">
-        <h1 style={{ marginBottom: '8px' }}>🏋️ Active Workout</h1>
+        <h1 style={{ marginBottom: '8px' }}>Active Workout</h1>
         <p className="text-muted" style={{ marginBottom: '20px' }}>
           {workout?.title || 'New Workout Session'}
         </p>
@@ -300,13 +323,22 @@ const WorkoutSession = () => {
                   {exercise.category}
                 </p>
               </div>
-              <button 
-                className="btn btn-danger"
-                onClick={() => removeExercise(exercise.id)}
-                style={{ padding: '8px 16px', fontSize: '0.9rem' }}
-              >
-                🗑️ Remove
-              </button>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button
+                  onClick={() => setShowExerciseInfo(exercise)}
+                  className="btn btn-outline"
+                  style={{ padding: '8px 16px', fontSize: '0.9rem' }}
+                >
+                  Info
+                </button>
+                <button 
+                  className="btn btn-danger"
+                  onClick={() => removeExercise(exercise.id)}
+                  style={{ padding: '8px 16px', fontSize: '0.9rem' }}
+                >
+                  Remove
+                </button>
+              </div>
             </div>
 
             {/* Sets Table */}
@@ -318,7 +350,7 @@ const WorkoutSession = () => {
                     <th style={{ padding: '12px 8px', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>WEIGHT (kg)</th>
                     <th style={{ padding: '12px 8px', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>REPS</th>
                     <th style={{ padding: '12px 8px', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>REST (s)</th>
-                    <th style={{ padding: '12px 8px', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>✓</th>
+                    <th style={{ padding: '12px 8px', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>DONE</th>
                     <th style={{ padding: '12px 8px', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.85rem' }}></th>
                   </tr>
                 </thead>
@@ -399,11 +431,11 @@ const WorkoutSession = () => {
                             background: set.completed ? 'var(--primary-color)' : 'transparent',
                             color: set.completed ? 'var(--dark)' : 'var(--text-secondary)',
                             cursor: 'pointer',
-                            fontSize: '1rem',
-                            fontWeight: '700'
+                            fontSize: '0.85rem',
+                            fontWeight: '600'
                           }}
                         >
-                          {set.completed ? '✓' : '○'}
+                          {set.completed ? 'Done' : 'Mark'}
                         </button>
                       </td>
                       <td style={{ padding: '12px 8px', textAlign: 'center' }}>
@@ -416,11 +448,11 @@ const WorkoutSession = () => {
                             background: 'transparent',
                             color: 'var(--danger-color)',
                             cursor: 'pointer',
-                            fontSize: '1.2rem'
+                            fontSize: '0.85rem'
                           }}
                           disabled={exercise.sets.length === 1}
                         >
-                          🗑️
+                          Delete
                         </button>
                       </td>
                     </tr>
@@ -438,14 +470,13 @@ const WorkoutSession = () => {
                 fontSize: '0.9rem'
               }}
             >
-              ➕ Add Set
+              + Add Set
             </button>
           </div>
         ))}
 
         {sessionExercises.length === 0 && (
           <div className="card text-center" style={{ padding: '60px 20px' }}>
-            <div style={{ fontSize: '3rem', marginBottom: '16px' }}>💪</div>
             <h3 style={{ marginBottom: '8px' }}>No exercises yet</h3>
             <p className="text-muted">Add your first exercise to start the workout</p>
           </div>
@@ -459,7 +490,7 @@ const WorkoutSession = () => {
           onClick={() => setShowExerciseBrowser(true)}
           style={{ padding: '14px 40px', fontSize: '1.05rem' }}
         >
-          ➕ Add Exercise
+          + Add Exercise
         </button>
       </div>
 
@@ -498,14 +529,16 @@ const WorkoutSession = () => {
                     {availableExercises.map((exercise) => (
                       <div
                         key={exercise.exerciseId || exercise.id}
-                        onClick={() => addExerciseToSession(exercise)}
                         style={{
                           padding: '16px',
                           border: '2px solid var(--gray-dark)',
                           borderRadius: 'var(--radius)',
-                          cursor: 'pointer',
                           transition: 'var(--transition)',
-                          background: 'var(--gray-darker)'
+                          background: 'var(--gray-darker)',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          gap: '16px'
                         }}
                         onMouseEnter={(e) => {
                           e.currentTarget.style.borderColor = 'var(--primary-color)';
@@ -516,19 +549,136 @@ const WorkoutSession = () => {
                           e.currentTarget.style.background = 'var(--gray-darker)';
                         }}
                       >
-                        <h4 style={{ marginBottom: '4px', color: 'var(--white)' }}>{exercise.name}</h4>
-                        <div style={{ display: 'flex', gap: '12px', fontSize: '0.85rem', color: 'var(--text-secondary)', flexWrap: 'wrap' }}>
-                          {exercise.category && <span>📁 {exercise.category}</span>}
-                          {exercise.difficulty && <span>⚡ {exercise.difficulty}</span>}
-                          {exercise.muscleGroup && <span>💪 {exercise.muscleGroup}</span>}
-                          {exercise.equipment && <span>🏋️ {exercise.equipment}</span>}
+                        <div
+                          onClick={() => addExerciseToSession(exercise)}
+                          style={{
+                            flex: 1,
+                            cursor: 'pointer'
+                          }}
+                        >
+                          <h4 style={{ marginBottom: '4px', color: 'var(--white)' }}>{exercise.name}</h4>
+                          <div style={{ display: 'flex', gap: '12px', fontSize: '0.85rem', color: 'var(--text-secondary)', flexWrap: 'wrap' }}>
+                            {exercise.category && <span>{exercise.category}</span>}
+                            {exercise.difficulty && <span>Difficulty: {exercise.difficulty}</span>}
+                            {exercise.muscleGroup && <span>{exercise.muscleGroup}</span>}
+                            {exercise.equipment && <span>{exercise.equipment}</span>}
+                          </div>
                         </div>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowExerciseInfo(exercise);
+                          }}
+                          className="btn btn-outline"
+                          style={{
+                            padding: '8px 16px',
+                            fontSize: '0.9rem',
+                            flexShrink: 0
+                          }}
+                        >
+                          Info
+                        </button>
                       </div>
                     ))}
                   </div>
                 )}
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Exercise Info Modal */}
+      {showExerciseInfo && (
+        <div className="modal-overlay" onClick={() => setShowExerciseInfo(null)}>
+          <div 
+            className="modal" 
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: '700px', maxHeight: '85vh', overflow: 'auto' }}
+          >
+            <div className="modal-header">
+              <h2>{showExerciseInfo.name}</h2>
+              <button className="modal-close" onClick={() => setShowExerciseInfo(null)}>
+                ×
+              </button>
+            </div>
+
+            <div style={{ padding: '0 20px 20px' }}>
+              {/* Exercise Details */}
+              <div style={{ marginBottom: '20px' }}>
+                {showExerciseInfo.category && (
+                  <div style={{ marginBottom: '8px' }}>
+                    <strong>Category:</strong> {showExerciseInfo.category}
+                  </div>
+                )}
+                {showExerciseInfo.muscleGroup && (
+                  <div style={{ marginBottom: '8px' }}>
+                    <strong>Muscle Group:</strong> {showExerciseInfo.muscleGroup}
+                  </div>
+                )}
+                {showExerciseInfo.difficulty && (
+                  <div style={{ marginBottom: '8px' }}>
+                    <strong>Difficulty:</strong> {showExerciseInfo.difficulty}
+                  </div>
+                )}
+                {showExerciseInfo.equipment && (
+                  <div style={{ marginBottom: '8px' }}>
+                    <strong>Equipment:</strong> {showExerciseInfo.equipment}
+                  </div>
+                )}
+              </div>
+
+              {showExerciseInfo.description && (
+                <div style={{ marginBottom: '20px' }}>
+                  <h3 style={{ marginBottom: '8px', fontSize: '1.1rem' }}>Description</h3>
+                  <p style={{ color: 'var(--text-secondary)', lineHeight: '1.6' }}>
+                    {showExerciseInfo.description}
+                  </p>
+                </div>
+              )}
+
+              {showExerciseInfo.instructions && (
+                <div style={{ marginBottom: '20px' }}>
+                  <h3 style={{ marginBottom: '8px', fontSize: '1.1rem' }}>Instructions</h3>
+                  <p style={{ color: 'var(--text-secondary)', lineHeight: '1.6', whiteSpace: 'pre-line' }}>
+                    {showExerciseInfo.instructions}
+                  </p>
+                </div>
+              )}
+
+              {showExerciseInfo.gifUrl && (
+                <div style={{ marginBottom: '20px', textAlign: 'center' }}>
+                  <h3 style={{ marginBottom: '12px', fontSize: '1.1rem' }}>How to perform</h3>
+                  <img 
+                    src={showExerciseInfo.gifUrl} 
+                    alt={showExerciseInfo.name}
+                    style={{ 
+                      maxWidth: '100%', 
+                      borderRadius: '8px',
+                      border: '2px solid var(--gray-dark)'
+                    }}
+                    onError={(e) => { e.target.style.display = 'none'; }}
+                  />
+                </div>
+              )}
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '20px' }}>
+                <button 
+                  className="btn btn-outline"
+                  onClick={() => setShowExerciseInfo(null)}
+                >
+                  Close
+                </button>
+                <Link
+                  to={`/exercises/${showExerciseInfo.exerciseId || showExerciseInfo.id}`}
+                  className="btn btn-primary"
+                  style={{ textDecoration: 'none' }}
+                  onClick={() => setShowExerciseInfo(null)}
+                >
+                  View Full Details
+                </Link>
+              </div>
+            </div>
           </div>
         </div>
       )}

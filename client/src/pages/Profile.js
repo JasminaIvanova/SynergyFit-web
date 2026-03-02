@@ -220,8 +220,8 @@ const Profile = () => {
                 </div>
                 {post.content?.text && <p>{post.content.text}</p>}
                 <div style={{ marginTop: '10px', display: 'flex', gap: '15px', fontSize: '0.9rem', color: '#868e96' }}>
-                  <span>❤️ {post.likes?.length || 0} likes</span>
-                  <span>💬 {post.comments?.length || 0} comments</span>
+                  <span>{post.likes?.length || 0} likes</span>
+                  <span>{post.comments?.length || 0} comments</span>
                 </div>
               </div>
             ))}

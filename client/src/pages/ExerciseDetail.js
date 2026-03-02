@@ -170,8 +170,8 @@ const ExerciseDetail = () => {
   if (error) {
     return (
       <div className="page">
-        <button className="btn btn-secondary mb-2" onClick={() => navigate('/exercises')}>
-          ← Back to Exercises
+        <button className="btn btn-secondary mb-2" onClick={() => navigate(-1)}>
+          ← Back
         </button>
         <div className="card">
           <p className="error">{error}</p>
@@ -183,8 +183,8 @@ const ExerciseDetail = () => {
   if (!exercise) {
     return (
       <div className="page">
-        <button className="btn btn-secondary mb-2" onClick={() => navigate('/exercises')}>
-          ← Back to Exercises
+        <button className="btn btn-secondary mb-2" onClick={() => navigate(-1)}>
+          ← Back
         </button>
         <div className="card">
           <p>Exercise not found</p>
@@ -195,8 +195,8 @@ const ExerciseDetail = () => {
 
   return (
     <div className="page">
-      <button className="btn btn-secondary mb-2" onClick={() => navigate('/exercises')}>
-        ← Back to Exercises
+      <button className="btn btn-secondary mb-2" onClick={() => navigate(-1)}>
+        ← Back
       </button>
 
       <div className="card">

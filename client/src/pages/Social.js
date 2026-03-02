@@ -175,10 +175,10 @@ const Social = () => {
                     className={`post-action-btn ${isLiked ? 'liked' : ''}`}
                     onClick={() => handleLike(post._id)}
                   >
-                    {isLiked ? '❤️' : '🤍'} {post.likes?.length || 0} likes
+                    {post.likes?.length || 0} likes
                   </button>
                   <button className="post-action-btn">
-                    💬 {post.comments?.length || 0} comments
+                    {post.comments?.length || 0} comments
                   </button>
                 </div>
 

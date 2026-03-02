@@ -203,39 +203,6 @@ const MealCreate = () => {
     onMouseOver={(e) => e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)'}
     onMouseOut={(e) => e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.05)'}
     >
-      {/* Food emoji icon instead of image */}
-      <div style={{
-        width: '100%',
-        height: '100px',
-        backgroundColor: '#f8f9fa',
-        borderRadius: '8px',
-        marginBottom: '12px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        fontSize: '3rem'
-      }}>
-        {product.name.toLowerCase().includes('chicken') ? '🍗' :
-         product.name.toLowerCase().includes('banana') ? '🍌' :
-         product.name.toLowerCase().includes('rice') ? '🍚' :
-         product.name.toLowerCase().includes('egg') ? '🥚' :
-         product.name.toLowerCase().includes('salmon') || product.name.toLowerCase().includes('fish') ? '🐟' :
-         product.name.toLowerCase().includes('broccoli') ? '🥦' :
-         product.name.toLowerCase().includes('potato') ? '🍠' :
-         product.name.toLowerCase().includes('yogurt') || product.name.toLowerCase().includes('yoghurt') ? '🥛' :
-         product.name.toLowerCase().includes('oat') ? '🌾' :
-         product.name.toLowerCase().includes('almond') || product.name.toLowerCase().includes('nut') ? '🥜' :
-         product.name.toLowerCase().includes('apple') ? '🍎' :
-         product.name.toLowerCase().includes('milk') ? '🥛' :
-         product.name.toLowerCase().includes('bread') ? '🍞' :
-         product.name.toLowerCase().includes('pasta') ? '🍝' :
-         product.name.toLowerCase().includes('beef') || product.name.toLowerCase().includes('steak') ? '🥩' :
-         product.name.toLowerCase().includes('cheese') ? '🧀' :
-         product.name.toLowerCase().includes('tomato') ? '🍅' :
-         product.name.toLowerCase().includes('carrot') ? '🥕' :
-         product.name.toLowerCase().includes('salad') || product.name.toLowerCase().includes('lettuce') ? '🥗' :
-         '🍽️'}
-      </div>
       
       <div style={{ flex: 1 }}>
         <h4 style={{ 
@@ -295,10 +262,10 @@ const MealCreate = () => {
         }}>
           <div style={{ fontWeight: '600', marginBottom: '4px' }}>Per 100g:</div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px' }}>
-            <div>🔥 {Math.round(product.nutrition.caloriesPer100g)} kcal</div>
-            <div>🥩 {Math.round(product.nutrition.proteinPer100g)}g protein</div>
-            <div>🍞 {Math.round(product.nutrition.carbsPer100g)}g carbs</div>
-            <div>🧈 {Math.round(product.nutrition.fatPer100g)}g fat</div>
+            <div>{Math.round(product.nutrition.caloriesPer100g)} kcal</div>
+            <div>{Math.round(product.nutrition.proteinPer100g)}g protein</div>
+            <div>{Math.round(product.nutrition.carbsPer100g)}g carbs</div>
+            <div>{Math.round(product.nutrition.fatPer100g)}g fat</div>
           </div>
         </div>
       </div>
@@ -327,7 +294,7 @@ const MealCreate = () => {
       <div className="page-header">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
           <div>
-            <h1 className="page-title">🍽️ Log New Meal</h1>
+            <h1 className="page-title">Log New Meal</h1>
             <p className="page-subtitle">Search and add foods from Open Food Facts database</p>
           </div>
           {selectedFoods.length > 0 && (
@@ -347,9 +314,6 @@ const MealCreate = () => {
         <form onSubmit={handleSearch}>
           <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
             <div style={{ position: 'relative', flex: 1 }}>
-              <span style={{ position: 'absolute', left: '15px', top: '50%', transform: 'translateY(-50%)', fontSize: '1.2rem' }}>
-                🔍
-              </span>
               <input
                 type="text"
                 className="form-control"
@@ -358,7 +322,7 @@ const MealCreate = () => {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 style={{ 
                   flex: 1,
-                  paddingLeft: '45px',
+                  paddingLeft: '15px',
                   height: '50px',
                   fontSize: '1rem',
                   borderRadius: '8px'
@@ -377,7 +341,7 @@ const MealCreate = () => {
                 borderRadius: '8px'
               }}
             >
-              {searching ? '⏳ Searching...' : 'Search'}
+              {searching ? 'Searching...' : 'Search'}
             </button>
           </div>
         </form>
@@ -392,7 +356,7 @@ const MealCreate = () => {
             color: '#856404',
             fontSize: '0.9rem'
           }}>
-            ⚠️ {error}
+            {error}
           </div>
         )}
       </div>
@@ -400,10 +364,10 @@ const MealCreate = () => {
       {/* Search Results */}
       {searchResults.length > 0 && (
         <div className="card mb-2">
-          <h2 className="mb-2">🔎 Search Results ({searchResults.length})</h2>
+          <h2 className="mb-2">Search Results ({searchResults.length})</h2>
           {searchIsOffline && (
             <p style={{ color: '#ff9800', marginBottom: '15px', fontSize: '0.9rem' }}>
-              📦 Showing offline results - Open Food Facts API is currently unavailable
+              Showing offline results - Open Food Facts API is currently unavailable
             </p>
           )}
           <div style={{ 
@@ -421,7 +385,7 @@ const MealCreate = () => {
       {/* Popular Foods - Show when no search results */}
       {searchResults.length === 0 && !searching && popularFoods.length > 0 && (
         <div className="card mb-2">
-          <h2 className="mb-2">✨ Common Foods</h2>
+          <h2 className="mb-2">Common Foods</h2>
           <p style={{ color: '#666', marginBottom: '15px', fontSize: '0.9rem' }}>
             Browse common foods below or use the search bar above to find specific foods from Open Food Facts
           </p>
@@ -440,7 +404,6 @@ const MealCreate = () => {
       {/* No Results Message */}
       {searchResults.length === 0 && !searching && popularFoods.length === 0 && !error && (
         <div className="card mb-2" style={{ textAlign: 'center', padding: '40px 20px' }}>
-          <div style={{ fontSize: '3rem', marginBottom: '15px' }}>🍽️</div>
           <h3 style={{ marginBottom: '10px' }}>Start by searching for foods</h3>
           <p style={{ color: '#666', fontSize: '0.95rem' }}>
             Use the search bar above to find foods from the Open Food Facts database.
@@ -462,7 +425,7 @@ const MealCreate = () => {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
               <h3 style={{ margin: 0, marginBottom: '5px', color: '#4CAF50' }}>
-                🛒 {selectedFoods.length} food{selectedFoods.length > 1 ? 's' : ''} added
+                {selectedFoods.length} food{selectedFoods.length > 1 ? 's' : ''} added
               </h3>
               <div style={{ fontSize: '0.9rem', color: '#666' }}>
                 Total: {Math.round(totalNutrition.calories)} kcal | 
@@ -476,7 +439,7 @@ const MealCreate = () => {
               onClick={() => setShowMealForm(true)}
               style={{ fontSize: '1rem', padding: '12px 24px' }}
             >
-              Continue to Save →
+              Continue to Save
             </button>
           </div>
         </div>
@@ -508,7 +471,7 @@ const MealCreate = () => {
             boxShadow: '0 10px 40px rgba(0,0,0,0.2)'
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <h2 style={{ margin: 0 }}>📝 Meal Details</h2>
+              <h2 style={{ margin: 0 }}>Meal Details</h2>
               <button
                 onClick={() => setShowMealForm(false)}
                 style={{
@@ -545,10 +508,10 @@ const MealCreate = () => {
                   onChange={(e) => setMealData({ ...mealData, meal_type: e.target.value })}
                   style={{ height: '45px', fontSize: '1rem' }}
                 >
-                  <option value="breakfast">🌅 Breakfast</option>
-                  <option value="lunch">🌞 Lunch</option>
-                  <option value="dinner">🌙 Dinner</option>
-                  <option value="snack">🍪 Snack</option>
+                  <option value="breakfast">Breakfast</option>
+                  <option value="lunch">Lunch</option>
+                  <option value="dinner">Dinner</option>
+                  <option value="snack">Snack</option>
                 </select>
               </div>
 
@@ -633,7 +596,7 @@ const MealCreate = () => {
 
             {/* Total Nutrition Summary */}
             <div style={{ backgroundColor: '#e8f5e9', padding: '20px', borderRadius: '8px', marginBottom: '20px' }}>
-              <h3 style={{ margin: 0, marginBottom: '15px', color: '#2e7d32' }}>📊 Total Nutrition</h3>
+              <h3 style={{ margin: 0, marginBottom: '15px', color: '#2e7d32' }}>Total Nutrition</h3>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '15px' }}>
                 <div style={{ textAlign: 'center' }}>
                   <div style={{ fontSize: '1.8rem', fontWeight: 'bold', color: '#2e7d32' }}>
@@ -678,7 +641,7 @@ const MealCreate = () => {
                 disabled={loading || selectedFoods.length === 0 || !mealData.name.trim()}
                 style={{ flex: 2, height: '48px', fontSize: '1rem', fontWeight: '600' }}
               >
-                {loading ? '💾 Saving...' : '✓ Save Meal'}
+                {loading ? 'Saving...' : 'Save Meal'}
               </button>
             </div>
           </div>
