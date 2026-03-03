@@ -266,23 +266,31 @@ const Meals = () => {
 
       <div className="page-header">
         <div>
-          <h1 className="page-title">Nutrition Tracking</h1>
+          <h1 className="page-title" style={{ marginBottom: '8px' }}>Nutrition Tracking</h1>
           <p className="page-subtitle">Track your daily calories and macros</p>
         </div>
         <button
           className="btn btn-primary"
           onClick={() => navigate('/meals/create')}
+          style={{ 
+            padding: '12px 24px',
+            fontSize: '1rem',
+            fontWeight: '600',
+            whiteSpace: 'nowrap',
+            minWidth: '140px'
+          }}
         >
           + Log Meal
         </button>
       </div>
 
-      <div className="card mb-2">
-        <div className="form-group">
-          <label>Select Date</label>
+      <div className="card mb-2" style={{ padding: '12px 16px' }}>
+        <div className="form-group" style={{ marginBottom: '0' }}>
+          <label style={{ marginBottom: '6px', fontSize: '0.85rem' }}>Select Date</label>
           <input
             type="date"
             className="form-control"
+            style={{ padding: '8px 12px' }}
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
           />
