@@ -101,6 +101,8 @@ export const adminService = {
   // Content moderation
   getAllPosts: (params) => API.get('/admin/posts', { params }),
   deletePost: (id) => API.delete(`/admin/posts/${id}`),
+  getPostComments: (postId) => API.get(`/admin/posts/${postId}/comments`),
+  deleteComment: (commentId) => API.delete(`/admin/comments/${commentId}`),
   
   // Statistics
   getStats: () => API.get('/admin/stats'),

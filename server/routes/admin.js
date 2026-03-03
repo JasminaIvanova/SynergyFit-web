@@ -15,6 +15,8 @@ router.put('/users/:id/status', adminController.updateUserStatus);
 // Content moderation routes
 router.get('/posts', adminController.getAllPosts);
 router.delete('/posts/:id', adminController.deletePost);
+router.get('/posts/:postId/comments', adminController.getPostComments);
+router.delete('/comments/:commentId', adminController.deleteComment);
 
 // Statistics
 router.get('/stats', adminController.getStats);

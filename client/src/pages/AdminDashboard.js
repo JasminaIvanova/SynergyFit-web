@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { adminService } from '../services';
 import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import './AdminDashboard.css';
 
 const AdminDashboard = () => {
@@ -11,6 +11,9 @@ const AdminDashboard = () => {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [notification, setNotification] = useState({ show: false, message: '', type: '' });
+  const [expandedPost, setExpandedPost] = useState(null);
+  const [comments, setComments] = useState({});
+  const [loadingComments, setLoadingComments] = useState({});
   const [filters, setFilters] = useState({
     userStatus: 'all',
     postType: 'all',
@@ -123,6 +126,49 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleToggleComments = async (postId) => {
+    if (expandedPost === postId) {
+      setExpandedPost(null);
+      return;
+    }
+
+    setExpandedPost(postId);
+
+    if (!comments[postId]) {
+      setLoadingComments({ ...loadingComments, [postId]: true });
+      try {
+        const res = await adminService.getPostComments(postId);
+        setComments({ ...comments, [postId]: res.data.comments });
+      } catch (error) {
+        console.error('Error loading comments:', error);
+        showNotification('Error loading comments', 'error');
+      } finally {
+        setLoadingComments({ ...loadingComments, [postId]: false });
+      }
+    }
+  };
+
+  const handleDeleteComment = async (postId, commentId) => {
+    if (!window.confirm('Are you sure you want to delete this comment?')) {
+      return;
+    }
+
+    try {
+      await adminService.deleteComment(commentId);
+      showNotification('Comment deleted successfully');
+      
+      // Remove comment from state
+      const updatedComments = comments[postId].filter(c => c.id !== commentId);
+      setComments({ ...comments, [postId]: updatedComments });
+      
+      // Reload posts to update comment count
+      loadPosts();
+    } catch (error) {
+      console.error('Error deleting comment:', error);
+      showNotification('Error deleting comment', 'error');
+    }
+  };
+
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
@@ -186,7 +232,13 @@ const AdminDashboard = () => {
                 {stats.topUsers.map((item, index) => (
                   <div key={index} className="top-user-item">
                     <span className="rank">#{index + 1}</span>
-                    <span className="user-name">{item.user?.name || 'Unknown'}</span>
+                    {item.user?.id ? (
+                      <Link to={`/profile/${item.user.id}`} className="user-name user-link">
+                        {item.user.name}
+                      </Link>
+                    ) : (
+                      <span className="user-name">Unknown</span>
+                    )}
                     <span className="posts-count">{item.postsCount} posts</span>
                   </div>
                 ))}
@@ -244,7 +296,9 @@ const AdminDashboard = () => {
                   <tr key={u.id} className={u.status === 'suspended' ? 'suspended-row' : ''}>
                     <td>
                       <div className="user-cell">
-                        <strong>{u.name}</strong>
+                        <Link to={`/profile/${u.id}`} className="user-link">
+                          <strong>{u.name}</strong>
+                        </Link>
                       </div>
                     </td>
                     <td>{u.email}</td>
@@ -309,44 +363,106 @@ const AdminDashboard = () => {
           <div className="loading">Loading posts...</div>
         ) : (
           <div className="posts-grid">
-            {posts.map((post) => (
-              <div key={post.id} className="post-card">
-                <div className="post-header">
-                  <div className="post-user">
-                    <strong>{post.user?.name || 'Unknown User'}</strong>
-                    <span className="post-date">{formatDate(post.created_at)}</span>
+            {posts.map((post) => {
+              // Parse content if it's a string
+              let postContent = post.content;
+              let postText = '';
+              let postImage = null;
+
+              if (typeof postContent === 'string') {
+                try {
+                  const parsed = JSON.parse(postContent);
+                  postText = parsed.text || '';
+                  postImage = parsed.image_url || null;
+                } catch (e) {
+                  postText = postContent;
+                }
+              } else if (postContent) {
+                postText = postContent.text || '';
+                postImage = postContent.image_url || null;
+              }
+
+              // Also check for image_url at top level
+              if (!postImage && post.image_url) {
+                postImage = post.image_url;
+              }
+
+              const postComments = comments[post.id] || [];
+              const isExpanded = expandedPost === post.id;
+
+              return (
+                <div key={post.id} className="post-card">
+                  <div className="post-header">
+                    <div className="post-user">
+                      <Link to={`/profile/${post.user?.id}`} className="user-link">
+                        <strong>{post.user?.name || 'Unknown User'}</strong>
+                      </Link>
+                      <span className="post-date">{formatDate(post.created_at)}</span>
+                    </div>
+                    <span className={`post-type-badge ${post.post_type}`}>
+                      {post.post_type}
+                    </span>
                   </div>
-                  <span className={`post-type-badge ${post.post_type}`}>
-                    {post.post_type}
-                  </span>
-                </div>
 
-                <div className="post-content">
-                  {typeof post.content === 'string' ? (
-                    <p>{post.content}</p>
-                  ) : (
-                    <p>{post.content?.text || ''}</p>
+                  <div className="post-content">
+                    {postText && <p>{postText}</p>}
+                    {postImage && (
+                      <img src={postImage} alt="Post" className="post-image" />
+                    )}
+                  </div>
+
+                  <div className="post-stats">
+                    <span>❤️ {post.stats?.likesCount || 0} likes</span>
+                    <button 
+                      className="comments-toggle"
+                      onClick={() => handleToggleComments(post.id)}
+                    >
+                      💬 {post.stats?.commentsCount || 0} comments
+                      <span className="toggle-icon">{isExpanded ? '▼' : '▶'}</span>
+                    </button>
+                  </div>
+
+                  {isExpanded && (
+                    <div className="comments-section">
+                      {loadingComments[post.id] ? (
+                        <div className="loading-comments">Loading comments...</div>
+                      ) : postComments.length > 0 ? (
+                        <div className="comments-list">
+                          {postComments.map((comment) => (
+                            <div key={comment.id} className="comment-item">
+                              <div className="comment-header">
+                                <Link to={`/profile/${comment.user?.id}`} className="comment-user user-link">
+                                  <strong>{comment.user?.name || 'Unknown'}</strong>
+                                </Link>
+                                <span className="comment-date">{formatDate(comment.created_at)}</span>
+                              </div>
+                              <p className="comment-text">{comment.comment}</p>
+                              <button
+                                onClick={() => handleDeleteComment(post.id, comment.id)}
+                                className="action-btn delete-comment"
+                              >
+                                🗑️ Delete
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="no-comments">No comments yet</div>
+                      )}
+                    </div>
                   )}
-                  {post.image_url && (
-                    <img src={post.image_url} alt="Post" className="post-image" />
-                  )}
-                </div>
 
-                <div className="post-stats">
-                  <span>❤️ {post.stats?.likesCount || 0} likes</span>
-                  <span>💬 {post.stats?.commentsCount || 0} comments</span>
+                  <div className="post-actions">
+                    <button
+                      onClick={() => handleDeletePost(post.id)}
+                      className="action-btn delete"
+                    >
+                      🗑️ Delete Post
+                    </button>
+                  </div>
                 </div>
-
-                <div className="post-actions">
-                  <button
-                    onClick={() => handleDeletePost(post.id)}
-                    className="action-btn delete"
-                  >
-                    🗑️ Delete Post
-                  </button>
-                </div>
-              </div>
-            ))}
+              );
+            })}
             {posts.length === 0 && (
               <div className="no-data">No posts found</div>
             )}
@@ -368,16 +484,18 @@ const AdminDashboard = () => {
   }
 
   return (
-    <div className="admin-dashboard">
+    <div className="page admin-dashboard">
       {notification.show && (
         <div className={`notification ${notification.type}`}>
           {notification.message}
         </div>
       )}
 
-      <div className="admin-header">
-        <h1>🛡️ Admin Dashboard</h1>
-        <p>Manage users and moderate content</p>
+      <div className="page-header admin-header">
+        <div>
+          <h1 className="page-title">🛡️ Admin Dashboard</h1>
+          <p className="page-subtitle">Manage users and moderate content</p>
+        </div>
       </div>
 
       <div className="admin-tabs">

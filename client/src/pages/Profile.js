@@ -416,9 +416,9 @@ const Profile = () => {
         <div className="flex-between">
           <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
             <div style={{ position: 'relative' }}>
-              {(user.profile_picture || profileForm.profile_picture) ? (
+              {(user.profile_picture || (isOwnProfile && profileForm.profile_picture)) ? (
                 <img 
-                  src={user.profile_picture || profileForm.profile_picture} 
+                  src={user.profile_picture || (isOwnProfile ? profileForm.profile_picture : '')} 
                   alt={user.name}
                   style={{ 
                     width: '80px', 

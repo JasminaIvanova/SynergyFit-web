@@ -216,6 +216,61 @@ exports.deletePost = async (req, res) => {
   }
 };
 
+// @desc    Get comments for a post (admin only)
+exports.getPostComments = async (req, res) => {
+  try {
+    const { postId } = req.params;
+
+    const { data: comments, error } = await supabaseAdmin
+      .from('post_comments')
+      .select('*, user:users(id, name, profile_picture)')
+      .eq('post_id', postId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      throw error;
+    }
+
+    res.json({ comments });
+  } catch (error) {
+    console.error('Error fetching comments:', error);
+    res.status(500).json({ message: 'Error fetching comments', error: error.message });
+  }
+};
+
+// @desc    Delete comment (admin only)
+exports.deleteComment = async (req, res) => {
+  try {
+    const { commentId } = req.params;
+
+    // Check if comment exists
+    const { data: comment, error: fetchError } = await supabaseAdmin
+      .from('post_comments')
+      .select('*')
+      .eq('id', commentId)
+      .single();
+
+    if (fetchError || !comment) {
+      return res.status(404).json({ message: 'Comment not found' });
+    }
+
+    // Delete the comment
+    const { error: deleteError } = await supabaseAdmin
+      .from('post_comments')
+      .delete()
+      .eq('id', commentId);
+
+    if (deleteError) {
+      throw deleteError;
+    }
+
+    res.json({ message: 'Comment deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting comment:', error);
+    res.status(500).json({ message: 'Error deleting comment', error: error.message });
+  }
+};
+
 // @desc    Get admin dashboard statistics
 exports.getStats = async (req, res) => {
   try {
