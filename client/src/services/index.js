@@ -80,3 +80,15 @@ export const userService = {
   getFollowing: (id) => API.get(`/users/${id}/following`),
   searchUsers: (query) => API.get(`/users/search/${query}`),
 };
+
+export const uploadService = {
+  uploadImage: (file) => {
+    const formData = new FormData();
+    formData.append('image', file);
+    return API.post('/upload/image', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
+};

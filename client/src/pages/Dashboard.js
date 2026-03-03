@@ -76,7 +76,7 @@ const Dashboard = () => {
         <div className="stat-card">
           <h3>Weight Progress</h3>
           <div className="value">
-            {stats?.weightChange ? `${stats.weightChange > 0 ? '+' : ''}${stats.weightChange.toFixed(1)} kg` : 'N/A'}
+            {stats?.weightChange !== null && stats?.weightChange !== undefined ? `${stats.weightChange > 0 ? '+' : ''}${Number(stats.weightChange).toFixed(1)} kg` : 'N/A'}
           </div>
           <div className="label">last 30 days</div>
         </div>

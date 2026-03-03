@@ -1,26 +1,28 @@
 const { supabaseAdmin } = require('../config/supabase');
 
-// @desc    Get feed posts
+// @desc    Get feed posts (all posts from all users)
 exports.getPosts = async (req, res) => {
   try {
-    const { page = 1, limit = 20, type } = req.query;
+    const { page = 1, limit = 20, type, following_only } = req.query;
     
-    // Get current user's following list
-    const { data: followingData } = await supabaseAdmin
-      .from('user_follows')
-      .select('following_id')
-      .eq('follower_id', req.userId);
-    
-    const following = followingData?.map(f => f.following_id) || [];
-    const userIds = [req.userId, ...following];
-    
-    // Build query
+    // Build query - show all posts by default
     let query = supabaseAdmin
       .from('posts')
       .select('*, user:users(id, name, profile_picture)')
-      .in('user_id', userIds)
       .order('created_at', { ascending: false })
       .range((page - 1) * limit, page * limit - 1);
+    
+    // Filter by following only if requested
+    if (following_only === 'true') {
+      const { data: followingData } = await supabaseAdmin
+        .from('user_follows')
+        .select('following_id')
+        .eq('follower_id', req.userId);
+      
+      const following = followingData?.map(f => f.following_id) || [];
+      const userIds = [req.userId, ...following];
+      query = query.in('user_id', userIds);
+    }
     
     if (type) {
       query = query.eq('post_type', type);
@@ -74,10 +76,22 @@ exports.getPosts = async (req, res) => {
     }
 
     // Get total count for pagination
-    const { count } = await supabaseAdmin
+    let countQuery = supabaseAdmin
       .from('posts')
-      .select('id', { count: 'exact', head: true })
-      .in('user_id', userIds);
+      .select('id', { count: 'exact', head: true });
+    
+    if (following_only === 'true') {
+      const { data: followingData } = await supabaseAdmin
+        .from('user_follows')
+        .select('following_id')
+        .eq('follower_id', req.userId);
+      
+      const following = followingData?.map(f => f.following_id) || [];
+      const userIds = [req.userId, ...following];
+      countQuery = countQuery.in('user_id', userIds);
+    }
+
+    const { count } = await countQuery;
 
     res.json({
       posts: posts || [],

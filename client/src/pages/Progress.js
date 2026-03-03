@@ -106,7 +106,11 @@ const Progress = () => {
 
     try {
       await progressService.createProgress(data);
-      showNotification('Progress entry added successfully!', 'success');
+      showNotification('Progress entry added successfully! Related goals updated automatically.', 'success');
+      
+      // Signal to Goals page that goals need to be refreshed
+      localStorage.setItem('goalsNeedRefresh', Date.now().toString());
+      
       setShowForm(false);
       setForm({
         weight: '',
@@ -387,7 +391,7 @@ const Progress = () => {
           <div className="stat-card">
             <h3>Weight Change</h3>
             <div className="value">
-              {stats.weightChange ? `${stats.weightChange > 0 ? '+' : ''}${stats.weightChange}` : 'N/A'}
+              {stats.weightChange !== null && stats.weightChange !== undefined ? `${stats.weightChange > 0 ? '+' : ''}${Number(stats.weightChange).toFixed(1)}` : 'N/A'}
             </div>
             <div className="label">kg</div>
           </div>
@@ -398,7 +402,7 @@ const Progress = () => {
           </div>
           <div className="stat-card">
             <h3>Average Weight</h3>
-            <div className="value">{stats.averageWeight?.toFixed(1) || 'N/A'}</div>
+            <div className="value">{stats.averageWeight ? Number(stats.averageWeight).toFixed(1) : 'N/A'}</div>
             <div className="label">kg</div>
           </div>
         </div>

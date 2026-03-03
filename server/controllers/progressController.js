@@ -52,12 +52,101 @@ exports.createProgress = async (req, res) => {
       throw progressError;
     }
 
+    console.log('Progress entry created:', { 
+      id: progress.id, 
+      weight: progress.weight, 
+      user_id: progress.user_id 
+    });
+
     // Update user's current weight if provided
     if (progress.weight) {
+      console.log('Updating user current_weight to:', progress.weight);
+      
       await supabaseAdmin
         .from('users')
         .update({ current_weight: progress.weight })
         .eq('id', req.userId);
+
+      // Update active weight goals with new current value
+      const { data: weightGoals, error: goalsError } = await supabaseAdmin
+        .from('goals')
+        .select('*')
+        .eq('user_id', req.userId)
+        .eq('goal_type', 'weight')
+        .eq('status', 'active');
+
+      console.log('Found weight goals:', weightGoals?.length || 0);
+      if (weightGoals && weightGoals.length > 0) {
+        console.log('Weight goals details:', weightGoals.map(g => ({ 
+          id: g.id, 
+          title: g.title, 
+          current: g.current_value, 
+          target: g.target_value 
+        })));
+      }
+
+      // Update each weight goal and check if completed
+      for (const goal of weightGoals || []) {
+        const updateData = { current_value: progress.weight };
+        
+        // Check if goal is reached
+        const current = parseFloat(progress.weight);
+        const target = parseFloat(goal.target_value);
+        const difference = Math.abs(current - target);
+        
+        console.log(`Updating goal ${goal.id}: current ${current} -> target ${target}, difference: ${difference}kg`);
+        
+        // Within 0.1kg (100g) tolerance
+        if (difference <= 0.1) {
+          updateData.status = 'completed';
+          console.log('Goal reached! Marking as completed (within 0.1kg tolerance).');
+        }
+
+        const { error: updateError } = await supabaseAdmin
+          .from('goals')
+          .update(updateData)
+          .eq('id', goal.id);
+
+        if (updateError) {
+          console.error('Error updating goal:', updateError);
+        } else {
+          console.log('Goal updated successfully:', updateData);
+        }
+      }
+    }
+
+    // Update measurement-related goals if measurements provided
+    const measurementGoalUpdates = [
+      { measurement: progress.chest_measurement, keyword: 'chest' },
+      { measurement: progress.waist_measurement, keyword: 'waist' },
+      { measurement: progress.hips_measurement, keyword: 'hips' },
+      { measurement: progress.arms_measurement, keyword: 'arms' },
+      { measurement: progress.thighs_measurement, keyword: 'thighs' }
+    ];
+
+    for (const { measurement, keyword } of measurementGoalUpdates) {
+      if (measurement) {
+        const { data: measurementGoals } = await supabaseAdmin
+          .from('goals')
+          .select('*')
+          .eq('user_id', req.userId)
+          .eq('status', 'active')
+          .or(`title.ilike.%${keyword}%,description.ilike.%${keyword}%`);
+
+        for (const goal of measurementGoals || []) {
+          const updateData = { current_value: measurement };
+          
+          // Check if goal is reached (within 0.5cm tolerance for measurements)
+          if (goal.target_value && Math.abs(parseFloat(measurement) - parseFloat(goal.target_value)) <= 0.5) {
+            updateData.status = 'completed';
+          }
+
+          await supabaseAdmin
+            .from('goals')
+            .update(updateData)
+            .eq('id', goal.id);
+        }
+      }
     }
 
     res.status(201).json({ 
@@ -203,7 +292,7 @@ exports.getProgressStats = async (req, res) => {
 
     const stats = {
       weightChange: lastEntry.weight && firstEntry.weight 
-        ? (lastEntry.weight - firstEntry.weight).toFixed(1)
+        ? parseFloat((lastEntry.weight - firstEntry.weight).toFixed(1))
         : null,
       totalEntries: progressEntries.length,
       averageWeight: progressEntries.reduce((sum, entry) => 
@@ -235,7 +324,7 @@ exports.getProgressStats = async (req, res) => {
 // Helper function to calculate change
 function calculateChange(first, last) {
   if (first && last) {
-    return (last - first).toFixed(1);
+    return parseFloat((last - first).toFixed(1));
   }
   return null;
 }

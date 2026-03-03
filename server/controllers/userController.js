@@ -6,7 +6,7 @@ exports.getUserProfile = async (req, res) => {
     // Get user data
     const { data: user, error: userError } = await supabaseAdmin
       .from('users')
-      .select('id, email, name, bio, profile_picture, date_of_birth, gender, height, current_weight, target_weight, activity_level, fitness_goal, created_at')
+      .select('id, email, name, bio, profile_picture, date_of_birth, gender, height, current_weight, target_weight, activity_level, fitness_goal, daily_calorie_goal, daily_protein_goal, daily_carbs_goal, daily_fat_goal, created_at')
       .eq('id', req.params.id)
       .single();
 
@@ -58,7 +58,7 @@ exports.updateUserProfile = async (req, res) => {
       .from('users')
       .update(updates)
       .eq('id', req.params.id)
-      .select('id, email, name, bio, profile_picture, date_of_birth, gender, height, current_weight, target_weight, activity_level, fitness_goal')
+      .select('id, email, name, bio, profile_picture, date_of_birth, gender, height, current_weight, target_weight, activity_level, fitness_goal, daily_calorie_goal, daily_protein_goal, daily_carbs_goal, daily_fat_goal')
       .single();
 
     if (error || !user) {

@@ -664,3 +664,21 @@
     opacity: 0;
   }
 }
+
+.notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: var(--success-color);
+  color: white;
+  padding: 16px 24px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  animation: slideIn 0.3s ease-out;
+  z-index: 1000;
+  max-width: 400px;
+}
+
+.notification-error {
+  background: var(--danger-color);
+}
