@@ -76,6 +76,7 @@ exports.uploadImage = async (req, res) => {
 
     res.json({
       success: true,
+      url: publicUrl,
       imageUrl: publicUrl,
       fileName: fileName
     });

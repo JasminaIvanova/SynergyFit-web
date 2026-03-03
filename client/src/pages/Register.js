@@ -93,7 +93,7 @@ const Register = () => {
             />
           </div>
           
-          <button type="submit" className="btn btn-primary" style={{ width: '100%' }} disabled={loading}>
+          <button type="submit" className="btn btn-primary" style={{ width: '100%', color: 'white' }} disabled={loading}>
             {loading ? 'Creating account...' : 'Sign Up'}
           </button>
         </form>

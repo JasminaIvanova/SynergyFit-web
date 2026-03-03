@@ -137,7 +137,7 @@ code {
 
 .btn-primary {
   background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);
-  color: var(--white);
+  color: white !important;
   box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
 }
 
@@ -157,7 +157,7 @@ code {
 
 .btn-danger {
   background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
-  color: white;
+  color: white !important;
   box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
 }
 
@@ -168,7 +168,7 @@ code {
 
 .btn-success {
   background: linear-gradient(135deg, #10B981 0%, #059669 100%);
-  color: white;
+  color: white !important;
   box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
 }
 
@@ -511,5 +511,15 @@ select.form-control {
   .btn {
     padding: 10px 20px;
     font-size: 0.95rem;
+  }
+}
+
+/* Animations */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
   }
 }

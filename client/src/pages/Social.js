@@ -445,9 +445,23 @@ const Social = () => {
               <div key={post.id} className="post-card">
                 {/* Header with avatar and user info */}
                 <div className="post-header">
-                  <div className="post-avatar">
-                    {getInitials(post.user?.name)}
-                  </div>
+                  {post.user?.profile_picture ? (
+                    <img 
+                      src={post.user.profile_picture} 
+                      alt={post.user.name}
+                      className="post-avatar"
+                      style={{ 
+                        width: '40px', 
+                        height: '40px', 
+                        borderRadius: '50%', 
+                        objectFit: 'cover' 
+                      }}
+                    />
+                  ) : (
+                    <div className="post-avatar">
+                      {getInitials(post.user?.name)}
+                    </div>
+                  )}
                   <div className="post-info">
                     <h4 
                       onClick={() => navigate(`/profile/${post.user?.id}`)}

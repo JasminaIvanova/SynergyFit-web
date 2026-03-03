@@ -20,9 +20,13 @@ const Profile = () => {
   const [newImage, setNewImage] = useState(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [deleteConfirmPost, setDeleteConfirmPost] = useState(null);
+  const [uploadingProfileImage, setUploadingProfileImage] = useState(false);
+  const [showFollowModal, setShowFollowModal] = useState(false);
+  const [modalType, setModalType] = useState('followers'); // 'followers' or 'following'
   const [profileForm, setProfileForm] = useState({
     name: '',
     bio: '',
+    profile_picture: '',
     date_of_birth: '',
     gender: '',
     height: '',
@@ -58,26 +62,27 @@ const Profile = () => {
 
   const loadProfile = async () => {
     try {
+      // Always load from server to get fresh data
+      const res = await userService.getUserProfile(profileId);
+      setUser(res.data.user);
+      
       if (isOwnProfile) {
-        setUser(currentUser);
         setProfileForm({
-          name: currentUser?.name || '',
-          bio: currentUser?.bio || '',
-          date_of_birth: currentUser?.date_of_birth || '',
-          gender: currentUser?.gender || '',
-          height: currentUser?.height || '',
-          current_weight: currentUser?.current_weight || '',
-          target_weight: currentUser?.target_weight || '',
-          activity_level: currentUser?.activity_level || '',
-          fitness_goal: currentUser?.fitness_goal || '',
-          daily_calorie_goal: currentUser?.daily_calorie_goal || '',
-          daily_protein_goal: currentUser?.daily_protein_goal || '',
-          daily_carbs_goal: currentUser?.daily_carbs_goal || '',
-          daily_fat_goal: currentUser?.daily_fat_goal || ''
+          name: res.data.user?.name || '',
+          bio: res.data.user?.bio || '',
+          profile_picture: res.data.user?.profile_picture || '',
+          date_of_birth: res.data.user?.date_of_birth || '',
+          gender: res.data.user?.gender || '',
+          height: res.data.user?.height || '',
+          current_weight: res.data.user?.current_weight || '',
+          target_weight: res.data.user?.target_weight || '',
+          activity_level: res.data.user?.activity_level || '',
+          fitness_goal: res.data.user?.fitness_goal || '',
+          daily_calorie_goal: res.data.user?.daily_calorie_goal || '',
+          daily_protein_goal: res.data.user?.daily_protein_goal || '',
+          daily_carbs_goal: res.data.user?.daily_carbs_goal || '',
+          daily_fat_goal: res.data.user?.daily_fat_goal || ''
         });
-      } else {
-        const res = await userService.getUserProfile(profileId);
-        setUser(res.data.user);
       }
 
       // Load followers and following
@@ -215,6 +220,57 @@ const Profile = () => {
     if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
     if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
     return `${Math.floor(seconds / 86400)}d ago`;
+  };
+
+  const handleProfileImageSelect = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    try {
+      setUploadingProfileImage(true);
+      
+      // Upload image
+      const uploadRes = await uploadService.uploadImage(file);
+      const imageUrl = uploadRes.data.url;
+      
+      // Update profile immediately
+      await userService.updateUserProfile(profileId, { profile_picture: imageUrl });
+      
+      // Update local state
+      setUser({ ...user, profile_picture: imageUrl });
+      setProfileForm({ ...profileForm, profile_picture: imageUrl });
+      
+      showNotification('Profile image updated!');
+      
+      // Reload profile to ensure sync
+      const res = await userService.getUserProfile(profileId);
+      setUser(res.data.user);
+    } catch (error) {
+      console.error('Error uploading profile image:', error);
+      showNotification('Error uploading image', 'error');
+    } finally {
+      setUploadingProfileImage(false);
+    }
+  };
+
+  const handleRemoveProfileImage = async () => {
+    try {
+      setUploadingProfileImage(true);
+      
+      // Update profile to remove image
+      await userService.updateUserProfile(profileId, { profile_picture: '' });
+      
+      // Update local state
+      setUser({ ...user, profile_picture: '' });
+      setProfileForm({ ...profileForm, profile_picture: '' });
+      
+      showNotification('Profile image removed!');
+    } catch (error) {
+      console.error('Error removing profile image:', error);
+      showNotification('Error removing image', 'error');
+    } finally {
+      setUploadingProfileImage(false);
+    }
   };
 
   const handleSaveProfile = async (e) => {
@@ -359,12 +415,85 @@ const Profile = () => {
       <div className="card mb-2">
         <div className="flex-between">
           <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-            <div className="post-avatar" style={{ width: '80px', height: '80px', fontSize: '2rem' }}>
-              {user.name?.substring(0, 2).toUpperCase()}
+            <div style={{ position: 'relative' }}>
+              {(user.profile_picture || profileForm.profile_picture) ? (
+                <img 
+                  src={user.profile_picture || profileForm.profile_picture} 
+                  alt={user.name}
+                  style={{ 
+                    width: '80px', 
+                    height: '80px', 
+                    borderRadius: '50%', 
+                    objectFit: 'cover',
+                    border: '2px solid rgba(139, 92, 246, 0.3)'
+                  }}
+                />
+              ) : (
+                <div className="post-avatar" style={{ width: '80px', height: '80px', fontSize: '2rem' }}>
+                  {user.name?.substring(0, 2).toUpperCase()}
+                </div>
+              )}
+              {isOwnProfile && editMode && (
+                <label 
+                  htmlFor="profile-image-upload"
+                  style={{ 
+                    position: 'absolute',
+                    bottom: '-5px',
+                    right: '-5px',
+                    background: 'linear-gradient(135deg, #8B5CF6 0%, #6D28D9 100%)',
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    border: '2px solid var(--card-bg)',
+                    transition: 'transform 0.2s ease'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
+                  onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                    <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                    <polyline points="21 15 16 10 5 21"></polyline>
+                  </svg>
+                  <input 
+                    id="profile-image-upload"
+                    type="file" 
+                    accept="image/*"
+                    onChange={handleProfileImageSelect}
+                    style={{ display: 'none' }}
+                  />
+                </label>
+              )}
             </div>
             <div>
               <h1 style={{ marginBottom: '5px' }}>{user.name}</h1>
               {user.bio && <p style={{ marginTop: '10px', color: '#868e96' }}>{user.bio}</p>}
+              {isOwnProfile && uploadingProfileImage && (
+                <div style={{ marginTop: '10px', display: 'flex', gap: '8px', alignItems: 'center', color: 'var(--primary-color)' }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ animation: 'spin 1s linear infinite' }}>
+                    <path d="M21 12a9 9 0 1 1-6.219-8.56"></path>
+                  </svg>
+                  <span style={{ fontSize: '0.85rem' }}>Uploading image...</span>
+                </div>
+              )}
+              {isOwnProfile && editMode && (user.profile_picture || profileForm.profile_picture) && !uploadingProfileImage && (
+                <button 
+                  type="button"
+                  onClick={handleRemoveProfileImage}
+                  className="btn btn-danger"
+                  style={{ marginTop: '10px', padding: '4px 12px', fontSize: '0.8rem', gap: '4px' }}
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
+                  Remove Photo
+                </button>
+              )}
             </div>
           </div>
           
@@ -390,11 +519,21 @@ const Profile = () => {
             <strong>{posts.length}</strong>
             <p className="text-muted">Posts</p>
           </div>
-          <div>
+          <div 
+            onClick={() => { setModalType('followers'); setShowFollowModal(true); }}
+            style={{ cursor: 'pointer', transition: 'opacity 0.2s' }}
+            onMouseEnter={(e) => e.currentTarget.style.opacity = '0.7'}
+            onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+          >
             <strong>{followers.length}</strong>
             <p className="text-muted">Followers</p>
           </div>
-          <div>
+          <div 
+            onClick={() => { setModalType('following'); setShowFollowModal(true); }}
+            style={{ cursor: 'pointer', transition: 'opacity 0.2s' }}
+            onMouseEnter={(e) => e.currentTarget.style.opacity = '0.7'}
+            onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+          >
             <strong>{following.length}</strong>
             <p className="text-muted">Following</p>
           </div>
@@ -708,9 +847,23 @@ const Profile = () => {
                 <div key={post.id} className="post-card">
                   {/* Header with avatar and user info */}
                   <div className="post-header">
-                    <div className="post-avatar">
-                      {getInitials(post.user?.name || user?.name)}
-                    </div>
+                    {(post.user?.profile_picture || user?.profile_picture) ? (
+                      <img 
+                        src={post.user?.profile_picture || user?.profile_picture} 
+                        alt={post.user?.name || user?.name}
+                        className="post-avatar"
+                        style={{ 
+                          width: '40px', 
+                          height: '40px', 
+                          borderRadius: '50%', 
+                          objectFit: 'cover' 
+                        }}
+                      />
+                    ) : (
+                      <div className="post-avatar">
+                        {getInitials(post.user?.name || user?.name)}
+                      </div>
+                    )}
                     <div className="post-info">
                       <h4 
                         onClick={() => post.user?.id && navigate(`/profile/${post.user.id}`)}
@@ -1014,6 +1167,128 @@ const Profile = () => {
               >
                 Cancel
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Followers/Following Modal */}
+      {showFollowModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.7)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          padding: '20px'
+        }} onClick={() => setShowFollowModal(false)}>
+          <div className="card" style={{
+            maxWidth: '500px',
+            width: '100%',
+            maxHeight: '600px',
+            margin: '20px',
+            padding: '24px',
+            display: 'flex',
+            flexDirection: 'column'
+          }} onClick={(e) => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <h3 style={{ fontSize: '1.3rem', margin: 0 }}>
+                {modalType === 'followers' ? 'Followers' : 'Following'}
+              </h3>
+              <button 
+                onClick={() => setShowFollowModal(false)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: '8px',
+                  color: 'var(--text-secondary)'
+                }}
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+            
+            <div style={{ flex: 1, overflowY: 'auto', marginTop: '10px' }}>
+              {(modalType === 'followers' ? followers : following).length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>
+                  <p>No {modalType === 'followers' ? 'followers' : 'following'} yet</p>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {(modalType === 'followers' ? followers : following).map((person) => (
+                    <div 
+                      key={person.id}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '12px',
+                        padding: '12px',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        transition: 'background 0.2s ease',
+                        border: '1px solid rgba(255, 255, 255, 0.05)'
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(139, 92, 246, 0.1)'}
+                      onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                      onClick={() => {
+                        setShowFollowModal(false);
+                        navigate(`/profile/${person.id}`);
+                      }}
+                    >
+                      {person.profile_picture ? (
+                        <img 
+                          src={person.profile_picture}
+                          alt={person.name}
+                          style={{
+                            width: '48px',
+                            height: '48px',
+                            borderRadius: '50%',
+                            objectFit: 'cover',
+                            border: '2px solid rgba(139, 92, 246, 0.2)'
+                          }}
+                        />
+                      ) : (
+                        <div style={{
+                          width: '48px',
+                          height: '48px',
+                          borderRadius: '50%',
+                          background: 'linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: 'white',
+                          fontWeight: '600',
+                          fontSize: '1.1rem'
+                        }}>
+                          {person.name?.substring(0, 2).toUpperCase()}
+                        </div>
+                      )}
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: '600', color: 'var(--white)', fontSize: '1rem' }}>
+                          {person.name}
+                        </div>
+                        {person.bio && (
+                          <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                            {person.bio.length > 50 ? person.bio.substring(0, 50) + '...' : person.bio}
+                          </div>
+                        )}
+                      </div>
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="9 18 15 12 9 6"></polyline>
+                      </svg>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>
