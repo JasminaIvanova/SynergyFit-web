@@ -196,11 +196,25 @@ const Social = () => {
       <div className="page-header">
         <h1 className="page-title">Social Feed</h1>
         <div style={{ display: 'flex', gap: '10px' }}>
-          <button className="btn btn-primary" onClick={() => setShowSearch(!showSearch)}>
-            🔍 {showSearch ? 'Hide Search' : 'Search Users'}
+          <button className="btn btn-primary" onClick={() => setShowSearch(!showSearch)} style={{ gap: '6px' }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="11" cy="11" r="8"></circle>
+              <path d="m21 21-4.35-4.35"></path>
+            </svg>
+            <span>{showSearch ? 'Hide Search' : 'Search Users'}</span>
           </button>
-          <button className="btn btn-primary" onClick={() => setShowCreatePost(!showCreatePost)}>
-            {showCreatePost ? 'Cancel' : '✏️ Create Post'}
+          <button className="btn btn-primary" onClick={() => setShowCreatePost(!showCreatePost)} style={{ gap: '6px' }}>
+            {showCreatePost ? (
+              <span>Cancel</span>
+            ) : (
+              <>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                </svg>
+                <span>Create Post</span>
+              </>
+            )}
           </button>
         </div>
       </div>
@@ -226,21 +240,23 @@ const Social = () => {
                     display: 'flex', 
                     justifyContent: 'space-between', 
                     alignItems: 'center',
-                    padding: '10px',
-                    borderBottom: '1px solid #f0f0f0'
+                    padding: '12px',
+                    borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+                    transition: 'background 0.2s ease'
                   }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(139, 92, 246, 0.1)'}
+                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                 >
                   <div 
                     onClick={() => navigate(`/profile/${searchUser.id}`)}
                     style={{ cursor: 'pointer', flex: 1 }}
                   >
-                    <strong>{searchUser.full_name || searchUser.username}</strong>
-                    <div style={{ fontSize: '0.9em', color: '#666' }}>@{searchUser.username}</div>
+                    <strong style={{ color: 'var(--white)', fontSize: '1rem' }}>{searchUser.name || searchUser.username}</strong>
                   </div>
                   <button
                     onClick={() => handleFollow(searchUser.id)}
                     className={searchUser.is_following ? 'btn btn-secondary' : 'btn btn-primary'}
-                    style={{ padding: '5px 15px' }}
+                    style={{ padding: '6px 16px', fontSize: '0.85rem' }}
                   >
                     {searchUser.is_following ? 'Unfollow' : 'Follow'}
                   </button>
@@ -316,9 +332,25 @@ const Social = () => {
               type="submit" 
               className="btn btn-primary"
               disabled={uploadingImage}
-              style={{ width: '100%', padding: '10px', fontSize: '0.95rem', fontWeight: '600' }}
+              style={{ width: '100%', padding: '10px', fontSize: '0.95rem', gap: '6px' }}
             >
-              {uploadingImage ? '📤 Uploading...' : '✨ Share Post'}
+              {uploadingImage ? (
+                <>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="17 8 12 3 7 8"></polyline>
+                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                  </svg>
+                  <span>Uploading...</span>
+                </>
+              ) : (
+                <>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                  </svg>
+                  <span>Share Post</span>
+                </>
+              )}
             </button>
           </form>
         </div>
@@ -330,16 +362,27 @@ const Social = () => {
           <button 
             className={`btn ${feedFilter === 'all' ? 'btn-primary' : 'btn-secondary'}`}
             onClick={() => setFeedFilter('all')}
-            style={{ fontSize: '0.9rem', padding: '8px 16px' }}
+            style={{ fontSize: '0.9rem', padding: '8px 16px', gap: '6px' }}
           >
-            🌍 All Posts
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="2" y1="12" x2="22" y2="12"></line>
+              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+            </svg>
+            <span>All Posts</span>
           </button>
           <button 
             className={`btn ${feedFilter === 'following' ? 'btn-primary' : 'btn-secondary'}`}
             onClick={() => setFeedFilter('following')}
-            style={{ fontSize: '0.9rem', padding: '8px 16px' }}
+            style={{ fontSize: '0.9rem', padding: '8px 16px', gap: '6px' }}
           >
-            👥 Following
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+              <circle cx="9" cy="7" r="4"></circle>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+            </svg>
+            <span>Following</span>
           </button>
         </div>
         <div style={{ 
@@ -406,7 +449,12 @@ const Social = () => {
                     {getInitials(post.user?.name)}
                   </div>
                   <div className="post-info">
-                    <h4>{post.user?.name || 'Unknown User'}</h4>
+                    <h4 
+                      onClick={() => navigate(`/profile/${post.user?.id}`)}
+                      style={{ cursor: 'pointer' }}
+                      onMouseEnter={(e) => e.currentTarget.style.color = 'var(--primary-color)'}
+                      onMouseLeave={(e) => e.currentTarget.style.color = ''}
+                    >{post.user?.name || 'Unknown User'}</h4>
                     <p className="post-time">{getTimeAgo(post.created_at)}</p>
                   </div>
                 </div>
@@ -463,11 +511,18 @@ const Social = () => {
                   <button 
                     className={`post-action-btn ${isLiked ? 'liked' : ''}`}
                     onClick={() => handleLike(post.id)}
+                    style={{ gap: '6px' }}
                   >
-                    ❤️ {post.likesCount || post.likes?.length || 0}
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill={isLiked ? '#ef4444' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                    </svg>
+                    {post.likesCount || post.likes?.length || 0}
                   </button>
-                  <button className="post-action-btn">
-                    💬 {post.comments?.length || 0}
+                  <button className="post-action-btn" style={{ gap: '6px' }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    {post.comments?.length || 0}
                   </button>
                 </div>
 
@@ -484,7 +539,14 @@ const Social = () => {
                     {post.post_type || 'general'}
                   </span>
                   {post.content?.text && (
-                    <span><strong>{post.user?.name}</strong> {post.content.text}</span>
+                    <span>
+                      <strong 
+                        onClick={() => navigate(`/profile/${post.user?.id}`)}
+                        style={{ cursor: 'pointer' }}
+                        onMouseEnter={(e) => e.currentTarget.style.color = 'var(--primary-color)'}
+                        onMouseLeave={(e) => e.currentTarget.style.color = ''}
+                      >{post.user?.name}</strong> {post.content.text}
+                    </span>
                   )}
                 </div>
 

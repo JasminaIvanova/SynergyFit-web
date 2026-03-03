@@ -487,16 +487,12 @@ const MealCreate = () => {
               <h2 style={{ margin: 0, color: '#fff' }}>Complete Your Entry</h2>
               <button
                 onClick={() => setShowMealForm(false)}
-                style={{
-                  border: 'none',
-                  background: 'none',
-                  fontSize: '1.5rem',
-                  cursor: 'pointer',
-                  padding: '5px 10px',
-                  color: 'var(--primary-color)'
-                }}
+                className="modal-close"
               >
-                ✕
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
               </button>
             </div>
 

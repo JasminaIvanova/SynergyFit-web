@@ -343,12 +343,12 @@ const Goals = () => {
                 <option value="custom">Custom</option>
               </select>
               <small style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '4px', display: 'block' }}>
-                {form.goal_type === 'weight' && '📊 Track your weight changes over time • Auto-syncs with Progress Tracking'}
-                {form.goal_type === 'strength' && '💪 Measure strength gains in weight or reps'}
-                {form.goal_type === 'endurance' && '🏃 Improve stamina and distance'}
-                {form.goal_type === 'flexibility' && '🧘 Enhance flexibility and range of motion • Auto-syncs with body measurements'}
-                {form.goal_type === 'habit' && '✅ Build consistent fitness habits'}
-                {form.goal_type === 'custom' && '🎯 Create your own custom goal'}
+                {form.goal_type === 'weight' && 'Track your weight changes over time • Auto-syncs with Progress Tracking'}
+                {form.goal_type === 'strength' && 'Measure strength gains in weight or reps'}
+                {form.goal_type === 'endurance' && 'Improve stamina and distance'}
+                {form.goal_type === 'flexibility' && 'Enhance flexibility and range of motion • Auto-syncs with body measurements'}
+                {form.goal_type === 'habit' && 'Build consistent fitness habits'}
+                {form.goal_type === 'custom' && 'Create your own custom goal'}
               </small>
             </div>
 
@@ -465,8 +465,13 @@ const Goals = () => {
         backgroundColor: 'var(--card-bg)',
         border: '1px solid rgba(255, 255, 255, 0.1)'
       }}>
-        <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-muted)' }}>
-          💡 <strong>Auto-Sync:</strong> Weight and measurement goals automatically update when you log progress entries.
+        <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ minWidth: '16px' }}>
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="16" x2="12" y2="12"></line>
+            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+          </svg>
+          <span><strong>Auto-Sync:</strong> Weight and measurement goals automatically update when you log progress entries.</span>
         </p>
       </div>
 
@@ -535,12 +540,22 @@ const Goals = () => {
                         <span><strong>Current:</strong> {goal.current_value || 0} {goal.unit}</span>
                         <span><strong>Target:</strong> {goal.target_value} {goal.unit}</span>
                         <span style={{ 
-                          color: parseFloat(goal.current_value) === parseFloat(goal.target_value) ? '#4CAF50' : 
+                          color: parseFloat(goal.current_value) === parseFloat(goal.target_value) ? '#10B981' : 
                                 parseFloat(goal.current_value) > parseFloat(goal.target_value) ? 'var(--danger-color)' : 
                                 'var(--warning-color)',
-                          fontWeight: 'bold'
+                          fontWeight: '500',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px'
                         }}>
-                          {parseFloat(goal.current_value) === parseFloat(goal.target_value) ? '✓ Reached!' :
+                          {parseFloat(goal.current_value) === parseFloat(goal.target_value) ? (
+                            <>
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                              </svg>
+                              <span>Reached!</span>
+                            </>
+                          ) :
                            Math.abs(parseFloat(goal.current_value) - parseFloat(goal.target_value)).toFixed(1) + ' ' + goal.unit + ' to go'}
                         </span>
                       </>
@@ -582,10 +597,17 @@ const Goals = () => {
                   marginTop: '10px',
                   border: '1px solid rgba(0, 229, 255, 0.3)'
                 }}>
-                  <small style={{ color: 'var(--primary-color)', fontSize: '0.9rem' }}>
-                    💡 <strong>Auto-synced with Progress:</strong> This goal automatically updates when you log progress in the Progress Tracking page.
-                    {goal.goal_type === 'weight' && ' Add weight entries to track your progress.'}
-                    {goal.goal_type === 'flexibility' && ' Add body measurements to track your progress.'}
+                  <small style={{ color: 'var(--primary-color)', fontSize: '0.9rem', display: 'flex', alignItems: 'flex-start', gap: '6px' }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ minWidth: '14px', marginTop: '2px' }}>
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <line x1="12" y1="16" x2="12" y2="12"></line>
+                      <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                    </svg>
+                    <span>
+                      <strong>Auto-synced with Progress:</strong> This goal automatically updates when you log progress in the Progress Tracking page.
+                      {goal.goal_type === 'weight' && ' Add weight entries to track your progress.'}
+                      {goal.goal_type === 'flexibility' && ' Add body measurements to track your progress.'}
+                    </span>
                   </small>
                 </div>
               )}

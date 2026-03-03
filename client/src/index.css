@@ -112,7 +112,7 @@ code {
   font-size: 0.9rem;
   cursor: pointer;
   transition: all 0.2s ease;
-  font-weight: 500;
+  font-weight: 400;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -396,7 +396,7 @@ select.form-control {
   padding: 5px 12px;
   border-radius: 8px;
   font-size: 0.7rem;
-  font-weight: 500;
+  font-weight: 400;
   letter-spacing: 0.02em;
   text-transform: uppercase;
 }

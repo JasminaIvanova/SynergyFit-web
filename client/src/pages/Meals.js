@@ -509,21 +509,33 @@ const Meals = () => {
                                     <button
                                       onClick={() => handleDeleteFood(meal.id || meal._id, idx, food.food_name || food.name)}
                                       style={{
-                                        background: 'none',
+                                        background: 'rgba(239, 68, 68, 0.1)',
                                         border: 'none',
-                                        color: '#666',
-                                        fontSize: '1.1rem',
+                                        borderRadius: '6px',
+                                        width: '26px',
+                                        height: '26px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
                                         cursor: 'pointer',
-                                        padding: '4px 8px',
+                                        padding: '0',
                                         marginLeft: '8px',
-                                        transition: 'color 0.2s',
-                                        lineHeight: '1'
+                                        transition: 'all 0.2s ease'
                                       }}
-                                      onMouseEnter={(e) => e.currentTarget.style.color = '#ff4444'}
-                                      onMouseLeave={(e) => e.currentTarget.style.color = '#666'}
+                                      onMouseEnter={(e) => {
+                                        e.currentTarget.style.background = '#EF4444';
+                                        e.currentTarget.querySelector('svg').style.stroke = 'white';
+                                      }}
+                                      onMouseLeave={(e) => {
+                                        e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)';
+                                        e.currentTarget.querySelector('svg').style.stroke = '#EF4444';
+                                      }}
                                       title="Delete this food"
                                     >
-                                      ✕
+                                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ transition: 'stroke 0.2s ease' }}>
+                                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                                      </svg>
                                     </button>
                                   </div>
                                 </div>

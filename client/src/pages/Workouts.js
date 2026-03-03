@@ -227,19 +227,21 @@ const Workouts = () => {
                       justifyContent: 'center',
                       cursor: 'pointer',
                       color: '#EF4444',
-                      fontSize: '1.1rem',
                       transition: 'all 0.2s ease'
                     }}
                     onMouseEnter={(e) => {
                       e.target.style.background = '#EF4444';
-                      e.target.style.color = 'white';
+                      e.target.querySelector('svg').style.stroke = 'white';
                     }}
                     onMouseLeave={(e) => {
                       e.target.style.background = 'rgba(239, 68, 68, 0.1)';
-                      e.target.style.color = '#EF4444';
+                      e.target.querySelector('svg').style.stroke = '#EF4444';
                     }}
                   >
-                    ×
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ transition: 'stroke 0.2s ease' }}>
+                      <line x1="18" y1="6" x2="6" y2="18"></line>
+                      <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
                   </button>
                 </div>
               </div>
@@ -283,9 +285,12 @@ const Workouts = () => {
                     <button 
                       className="btn btn-outline"
                       onClick={() => handleComplete(workout.id)}
-                      style={{ flex: '0 0 auto', fontSize: '0.85rem', padding: '8px 14px' }}
+                      style={{ flex: '0 0 auto', fontSize: '0.85rem', padding: '8px 14px', gap: '4px' }}
                     >
-                      ✓ Complete
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                      </svg>
+                      <span>Complete</span>
                     </button>
                   </>
                 ) : (

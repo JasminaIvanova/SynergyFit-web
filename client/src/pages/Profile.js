@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { userService, postService, uploadService } from '../services';
 
 const Profile = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const { user: currentUser } = useAuth();
   const [user, setUser] = useState(null);
   const [posts, setPosts] = useState([]);
@@ -520,9 +521,16 @@ const Profile = () => {
                 type="button"
                 className="btn btn-success"
                 onClick={calculateMacros}
-                style={{ marginBottom: '12px' }}
+                style={{ marginBottom: '12px', gap: '8px' }}
               >
-                🧮 Calculate My Macros
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="4" y="2" width="16" height="20" rx="2"></rect>
+                  <line x1="8" y1="6" x2="16" y2="6"></line>
+                  <line x1="16" y1="10" x2="8" y2="10"></line>
+                  <line x1="8" y1="14" x2="16" y2="14"></line>
+                  <line x1="16" y1="18" x2="8" y2="18"></line>
+                </svg>
+                Calculate My Macros
               </button>
             </div>
 
@@ -686,7 +694,7 @@ const Profile = () => {
           fontSize: '1.5rem',
           marginBottom: '20px',
           color: 'var(--white)'
-        }}>My Posts</h2>
+        }}>Posts</h2>
         {posts.length === 0 ? (
           <div className="card" style={{ textAlign: 'center' }}>
             <p className="text-muted">No posts yet</p>
@@ -704,7 +712,12 @@ const Profile = () => {
                       {getInitials(post.user?.name || user?.name)}
                     </div>
                     <div className="post-info">
-                      <h4>{post.user?.name || user?.name || 'Unknown User'}</h4>
+                      <h4 
+                        onClick={() => post.user?.id && navigate(`/profile/${post.user.id}`)}
+                        style={{ cursor: post.user?.id ? 'pointer' : 'default' }}
+                        onMouseEnter={(e) => post.user?.id && (e.currentTarget.style.color = 'var(--primary-color)')}
+                        onMouseLeave={(e) => e.currentTarget.style.color = ''}
+                      >{post.user?.name || user?.name || 'Unknown User'}</h4>
                       <p className="post-time">{getTimeAgo(post.created_at)}</p>
                     </div>
                     {isOwnProfile && editingPost !== post.id && (
@@ -799,21 +812,23 @@ const Profile = () => {
                                 position: 'absolute',
                                 top: '8px',
                                 right: '8px',
-                                backgroundColor: 'rgba(255, 75, 75, 0.9)',
+                                backgroundColor: 'rgba(239, 68, 68, 0.95)',
                                 color: 'white',
                                 border: 'none',
-                                borderRadius: '50%',
-                                width: '32px',
-                                height: '32px',
+                                borderRadius: '8px',
+                                width: '30px',
+                                height: '30px',
                                 cursor: 'pointer',
-                                fontSize: '1.2rem',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                fontWeight: 'bold'
+                                transition: 'all 0.2s ease'
                               }}
                             >
-                              ×
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                              </svg>
                             </button>
                           </div>
                         )}
@@ -892,11 +907,18 @@ const Profile = () => {
                     <button 
                       className={`post-action-btn ${isLiked ? 'liked' : ''}`}
                       onClick={() => handleLike(post.id)}
+                      style={{ gap: '6px' }}
                     >
-                      ❤️ {post.likesCount || post.likes?.length || 0}
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill={isLiked ? '#ef4444' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                      </svg>
+                      {post.likesCount || post.likes?.length || 0}
                     </button>
-                    <button className="post-action-btn">
-                      💬 {post.comments?.length || 0}
+                    <button className="post-action-btn" style={{ gap: '6px' }}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                      </svg>
+                      {post.comments?.length || 0}
                     </button>
                   </div>
 
@@ -913,7 +935,14 @@ const Profile = () => {
                       {post.post_type || 'general'}
                     </span>
                     {post.content?.text && (
-                      <span><strong>{post.user?.name || user?.name}</strong> {post.content.text}</span>
+                      <span>
+                        <strong 
+                          onClick={() => post.user?.id && navigate(`/profile/${post.user.id}`)}
+                          style={{ cursor: post.user?.id ? 'pointer' : 'default' }}
+                          onMouseEnter={(e) => post.user?.id && (e.currentTarget.style.color = 'var(--primary-color)')}
+                          onMouseLeave={(e) => e.currentTarget.style.color = ''}
+                        >{post.user?.name || user?.name}</strong> {post.content.text}
+                      </span>
                     )}
                   </div>
 
