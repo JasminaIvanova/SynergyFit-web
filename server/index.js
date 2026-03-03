@@ -18,6 +18,7 @@ const progressRoutes = require('./routes/progress');
 const postRoutes = require('./routes/posts');
 const goalRoutes = require('./routes/goals');
 const uploadRoutes = require('./routes/upload');
+const adminRoutes = require('./routes/admin');
 
 const app = express();
 
@@ -51,6 +52,7 @@ app.use('/api/progress', progressRoutes);
 app.use('/api/posts', postRoutes);
 app.use('/api/goals', goalRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

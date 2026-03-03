@@ -31,7 +31,15 @@ A comprehensive fitness platform for managing workout routines, nutrition tracki
 - View all posts or filter by following
 - Filter posts by type (workout, meal, progress, achievement)
 
-### 📊 Goals & Progress Integration
+### �️ Admin Panel
+- **User Management**: View, suspend, and activate user accounts
+- **Content Moderation**: Review and delete inappropriate posts
+- **Dashboard Statistics**: Monitor platform activity and growth
+- **Role-Based Access**: Secure admin-only features
+- Search and filter users and content
+- (See [ADMIN_SETUP.md](ADMIN_SETUP.md) for setup instructions)
+
+### �📊 Goals & Progress Integration
 - Set fitness goals (weight, measurements, nutrition)
 - Auto-complete goals when progress entries match targets
 - Track weight with 0.1kg precision

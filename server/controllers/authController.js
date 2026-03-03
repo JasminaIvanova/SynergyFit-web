@@ -4,9 +4,9 @@ const bcrypt = require('bcryptjs');
 const { supabaseAdmin } = require('../config/supabase');
 
 // Generate JWT token
-const generateToken = (userId) => {
+const generateToken = (userId, role) => {
   return jwt.sign(
-    { userId },
+    { userId, role },
     process.env.JWT_SECRET || 'fallback_secret',
     { expiresIn: '30d' }
   );
@@ -62,7 +62,7 @@ exports.register = async (req, res) => {
     console.log('✅ User created successfully:', user.id);
 
     // Generate token
-    const token = generateToken(user.id);
+    const token = generateToken(user.id, user.role || 'user');
 
     res.status(201).json({
       message: 'User registered successfully',
@@ -71,6 +71,7 @@ exports.register = async (req, res) => {
         id: user.id,
         name: user.name,
         email: user.email,
+        role: user.role || 'user',
       },
     });
   } catch (error) {
@@ -103,14 +104,25 @@ exports.login = async (req, res) => {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
+    // Check if user is suspended
+    if (user.status === 'suspended') {
+      return res.status(403).json({ message: 'Account suspended. Please contact support.' });
+    }
+
     // Check password
     const isMatch = await bcrypt.compare(password, user.password_hash);
     if (!isMatch) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
+    // Update last_login
+    await supabaseAdmin
+      .from('users')
+      .update({ last_login: new Date().toISOString() })
+      .eq('id', user.id);
+
     // Generate token
-    const token = generateToken(user.id);
+    const token = generateToken(user.id, user.role || 'user');
 
     // Remove password_hash from response
     delete user.password_hash;

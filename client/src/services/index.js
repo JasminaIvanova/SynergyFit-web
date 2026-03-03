@@ -92,3 +92,16 @@ export const uploadService = {
     });
   },
 };
+
+export const adminService = {
+  // User management
+  getAllUsers: (params) => API.get('/admin/users', { params }),
+  updateUserStatus: (id, status) => API.put(`/admin/users/${id}/status`, { status }),
+  
+  // Content moderation
+  getAllPosts: (params) => API.get('/admin/posts', { params }),
+  deletePost: (id) => API.delete(`/admin/posts/${id}`),
+  
+  // Statistics
+  getStats: () => API.get('/admin/stats'),
+};

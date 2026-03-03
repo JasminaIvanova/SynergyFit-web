@@ -18,6 +18,7 @@ import Progress from './pages/Progress';
 import Social from './pages/Social';
 import Profile from './pages/Profile';
 import Goals from './pages/Goals';
+import AdminDashboard from './pages/AdminDashboard';
 import PrivateRoute from './components/PrivateRoute';
 import './App.css';
 
@@ -114,6 +115,12 @@ function App() {
               <Route path="/profile/:id?" element={
                 <PrivateRoute>
                   <Profile />
+                </PrivateRoute>
+              } />
+              
+              <Route path="/admin" element={
+                <PrivateRoute>
+                  <AdminDashboard />
                 </PrivateRoute>
               } />
               

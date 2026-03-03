@@ -144,16 +144,16 @@ const Workouts = () => {
       )}
 
       <div className="page-header">
-        <div className="flex-between">
+        <div className="flex-between" style={{ width: '100%' }}>
           <div>
             <h1 className="page-title">My Workouts</h1>
             <p className="page-subtitle">Track your training sessions</p>
           </div>
           <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-            <Link to="/workouts/new" className="btn btn-secondary">
+            <Link to="/workouts/new" className="btn btn-primary">
               Create Plan
             </Link>
-            <Link to="/workouts/session" className="btn btn-success" style={{ fontSize: '1rem', fontWeight: '600' }}>
+            <Link to="/workouts/session" className="btn btn-primary">
               Start Workout
             </Link>
           </div>

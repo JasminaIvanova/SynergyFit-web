@@ -9,6 +9,8 @@ CREATE TABLE IF NOT EXISTS users (
     email VARCHAR(255) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
     name VARCHAR(255) NOT NULL,
+    role VARCHAR(50) DEFAULT 'user' CHECK (role IN ('user', 'admin')),
+    status VARCHAR(50) DEFAULT 'active' CHECK (status IN ('active', 'suspended')),
     bio TEXT,
     profile_picture TEXT,
     date_of_birth DATE,

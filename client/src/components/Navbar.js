@@ -28,6 +28,9 @@ const Navbar = () => {
               <li><Link to="/progress">Progress</Link></li>
               <li><Link to="/goals">Goals</Link></li>
               <li><Link to="/social">Social</Link></li>
+              {user?.role === 'admin' && (
+                <li><Link to="/admin" className="admin-link">🛡️ Admin</Link></li>
+              )}
               <li><Link to="/profile">Profile</Link></li>
               <li>
                 <button onClick={handleLogout} className="btn btn-secondary">
