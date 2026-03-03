@@ -72,19 +72,22 @@ const Workouts = () => {
       {notification.show && (
         <div style={{
           position: 'fixed',
-          top: '20px',
-          right: '20px',
+          top: '24px',
+          right: '24px',
           zIndex: 9999,
-          backgroundColor: notification.type === 'success' ? 'rgba(0, 229, 255, 0.95)' : 
-                          notification.type === 'error' ? 'rgba(255, 75, 75, 0.95)' : 
-                          'rgba(255, 193, 7, 0.95)',
-          color: notification.type === 'success' ? '#121212' : '#fff',
-          padding: '15px 25px',
-          borderRadius: '8px',
-          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3)',
-          fontWeight: '600',
-          fontSize: '1rem',
-          minWidth: '250px',
+          backgroundColor: notification.type === 'success' ? 'rgba(16, 185, 129, 0.95)' : 
+                          notification.type === 'error' ? 'rgba(239, 68, 68, 0.95)' : 
+                          'rgba(245, 158, 11, 0.95)',
+          backdropFilter: 'blur(12px)',
+          color: '#fff',
+          padding: '14px 22px',
+          borderRadius: '10px',
+          boxShadow: notification.type === 'success' ? '0 4px 12px rgba(16, 185, 129, 0.4)' :
+                     notification.type === 'error' ? '0 4px 12px rgba(239, 68, 68, 0.4)' :
+                     '0 4px 12px rgba(245, 158, 11, 0.4)',
+          fontWeight: '500',
+          fontSize: '0.95rem',
+          minWidth: '240px',
           animation: 'slideIn 0.3s ease-out'
         }}>
           {notification.message}
@@ -99,7 +102,8 @@ const Workouts = () => {
           left: 0,
           right: 0,
           bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.8)',
+          backgroundColor: 'rgba(10, 10, 11, 0.9)',
+          backdropFilter: 'blur(8px)',
           zIndex: 9998,
           display: 'flex',
           alignItems: 'center',
@@ -107,30 +111,30 @@ const Workouts = () => {
           padding: '20px'
         }}>
           <div style={{
-            backgroundColor: 'var(--card-bg)',
-            border: '2px solid var(--primary-color)',
+            backgroundColor: 'rgba(26, 26, 29, 0.95)',
+            backdropFilter: 'blur(24px)',
+            border: '1px solid rgba(139, 92, 246, 0.2)',
             borderRadius: '12px',
-            padding: '30px',
-            maxWidth: '450px',
-            width: '100%',
-            boxShadow: '0 10px 40px rgba(0, 229, 255, 0.3)'
+            padding: '32px',
+            maxWidth: '420px',
+            width: '100%'
           }}>
-            <h3 style={{ marginBottom: '15px', color: '#fff' }}>Delete Workout?</h3>
-            <p style={{ marginBottom: '25px', color: '#ccc', fontSize: '1rem' }}>
-              Are you sure you want to delete <strong style={{ color: 'var(--primary-color)' }}>{deleteConfirm.name}</strong>? This action cannot be undone.
+            <h3 style={{ marginBottom: '12px', color: '#fff', fontSize: '1.4rem', fontWeight: '600' }}>Delete Workout?</h3>
+            <p style={{ marginBottom: '24px', color: '#A1A1AA', fontSize: '0.95rem', lineHeight: '1.5' }}>
+              Are you sure you want to delete <strong style={{ color: '#8B5CF6' }}>{deleteConfirm.name}</strong>? This action cannot be undone.
             </p>
-            <div style={{ display: 'flex', gap: '15px', justifyContent: 'flex-end' }}>
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
               <button
                 className="btn btn-secondary"
                 onClick={cancelDelete}
-                style={{ minWidth: '100px' }}
+                style={{ minWidth: '90px' }}
               >
                 Cancel
               </button>
               <button
                 className="btn btn-danger"
                 onClick={confirmDelete}
-                style={{ minWidth: '100px' }}
+                style={{ minWidth: '90px' }}
               >
                 Delete
               </button>
@@ -145,40 +149,44 @@ const Workouts = () => {
             <h1 className="page-title">My Workouts</h1>
             <p className="page-subtitle">Track your training sessions</p>
           </div>
-          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-            <Link to="/workouts/session" className="btn btn-success" style={{ fontSize: '1.1rem', padding: '14px 28px' }}>
-              Start Workout
-            </Link>
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
             <Link to="/workouts/new" className="btn btn-secondary">
               Create Plan
+            </Link>
+            <Link to="/workouts/session" className="btn btn-success" style={{ fontSize: '1rem', fontWeight: '600' }}>
+              Start Workout
             </Link>
           </div>
         </div>
       </div>
 
       <div className="card mb-2">
-        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
           <button 
             className={`btn ${filter === 'all' ? 'btn-primary' : 'btn-secondary'}`}
             onClick={() => setFilter('all')}
+            style={{ fontSize: '0.85rem', padding: '8px 16px' }}
           >
             All
           </button>
           <button 
             className={`btn ${filter === 'scheduled' ? 'btn-primary' : 'btn-secondary'}`}
             onClick={() => setFilter('scheduled')}
+            style={{ fontSize: '0.85rem', padding: '8px 16px' }}
           >
             Scheduled
           </button>
           <button 
             className={`btn ${filter === 'completed' ? 'btn-primary' : 'btn-secondary'}`}
             onClick={() => setFilter('completed')}
+            style={{ fontSize: '0.85rem', padding: '8px 16px' }}
           >
             Completed
           </button>
           <button 
             className={`btn ${filter === 'templates' ? 'btn-primary' : 'btn-secondary'}`}
             onClick={() => setFilter('templates')}
+            style={{ fontSize: '0.85rem', padding: '8px 16px' }}
           >
             Templates
           </button>
@@ -196,50 +204,99 @@ const Workouts = () => {
           {workouts.map((workout) => (
             <div key={workout.id} className="workout-card">
               <div className="workout-card-header">
-                <div>
+                <div style={{ flex: 1 }}>
                   <h3>{workout.title}</h3>
                   <p className="text-muted">{workout.description}</p>
                 </div>
-                <span className={`workout-badge ${workout.completed_date ? 'completed' : 'scheduled'}`}>
-                  {workout.completed_date ? 'Completed' : 'Scheduled'}
-                </span>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+                  <span className={`workout-badge ${workout.completed_date ? 'completed' : 'scheduled'}`}>
+                    {workout.completed_date ? 'Completed' : 'Scheduled'}
+                  </span>
+                  <button 
+                    className="btn-icon-danger"
+                    onClick={() => handleDeleteClick(workout.id, workout.title)}
+                    title="Delete workout"
+                    style={{
+                      background: 'rgba(239, 68, 68, 0.1)',
+                      border: 'none',
+                      borderRadius: '8px',
+                      width: '32px',
+                      height: '32px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: 'pointer',
+                      color: '#EF4444',
+                      fontSize: '1.1rem',
+                      transition: 'all 0.2s ease'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.target.style.background = '#EF4444';
+                      e.target.style.color = 'white';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.target.style.background = 'rgba(239, 68, 68, 0.1)';
+                      e.target.style.color = '#EF4444';
+                    }}
+                  >
+                    ×
+                  </button>
+                </div>
               </div>
 
-              <div style={{ marginBottom: '15px' }}>
-                <p><strong>Exercises:</strong> {workout.exercises?.length || 0}</p>
-                <p><strong>Duration:</strong> {workout.duration_minutes || 0} minutes</p>
-                {workout.calories_burned && <p><strong>Calories:</strong> {workout.calories_burned}</p>}
+              <div style={{ marginBottom: '16px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                  <strong style={{ color: 'var(--text-primary)' }}>Exercises:</strong> {workout.exercises?.length || 0}
+                </p>
+                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                  <strong style={{ color: 'var(--text-primary)' }}>Duration:</strong> {workout.duration_minutes || 0} min
+                </p>
+                {workout.calories_burned && (
+                  <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                    <strong style={{ color: 'var(--text-primary)' }}>Calories:</strong> {workout.calories_burned}
+                  </p>
+                )}
                 {workout.scheduled_date && (
-                  <p><strong>Scheduled:</strong> {new Date(workout.scheduled_date).toLocaleDateString()}</p>
+                  <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                    <strong style={{ color: 'var(--text-primary)' }}>Scheduled:</strong> {new Date(workout.scheduled_date).toLocaleDateString()}
+                  </p>
                 )}
               </div>
 
-              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                <Link to={`/workouts/${workout.id}`} className="btn btn-secondary">
-                  View Details
-                </Link>
-                {!workout.completed_date && (
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                {!workout.completed_date ? (
+                  <>
+                    <Link 
+                      to={`/workouts/session/${workout.id}`}
+                      className="btn btn-primary"
+                      style={{ flex: '1', minWidth: '120px' }}
+                    >
+                      Start Session
+                    </Link>
+                    <Link 
+                      to={`/workouts/${workout.id}`} 
+                      className="btn btn-secondary"
+                      style={{ flex: '0 0 auto' }}
+                    >
+                      Details
+                    </Link>
+                    <button 
+                      className="btn btn-outline"
+                      onClick={() => handleComplete(workout.id)}
+                      style={{ flex: '0 0 auto', fontSize: '0.85rem', padding: '8px 14px' }}
+                    >
+                      ✓ Complete
+                    </button>
+                  </>
+                ) : (
                   <Link 
-                    to={`/workouts/session/${workout.id}`}
+                    to={`/workouts/${workout.id}`} 
                     className="btn btn-primary"
+                    style={{ flex: '1' }}
                   >
-                    Start Session
+                    View Details
                   </Link>
                 )}
-                {!workout.completed_date && (
-                  <button 
-                    className="btn btn-outline"
-                    onClick={() => handleComplete(workout.id)}
-                  >
-                    Mark Complete
-                  </button>
-                )}
-                <button 
-                  className="btn btn-danger"
-                  onClick={() => handleDeleteClick(workout.id, workout.title)}
-                >
-                  Delete
-                </button>
               </div>
             </div>
           ))}

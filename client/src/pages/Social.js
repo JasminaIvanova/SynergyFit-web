@@ -159,18 +159,21 @@ const Social = () => {
   };
 
   const handleDelete = async (postId) => {
-    if (window.confirm('Are you sure you want to delete this post?')) {
-      try {
-        await postService.deletePost(postId);
-        loadPosts();
-      } catch (error) {
-        console.error('Error deleting post:', error);
-      }
+    try {
+      await postService.deletePost(postId);
+      loadPosts();
+    } catch (error) {
+      console.error('Error deleting post:', error);
     }
   };
 
-  const getInitials = (username) => {
-    return username?.substring(0, 2).toUpperCase() || 'U';
+  const getInitials = (name) => {
+    if (!name) return 'U';
+    const parts = name.split(' ');
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
   };
 
   const getTimeAgo = (date) => {
@@ -249,15 +252,16 @@ const Social = () => {
       )}
 
       {showCreatePost && (
-        <div className="card mb-2">
-          <h3 style={{ marginBottom: '16px' }}>Create New Post</h3>
+        <div className="card mb-2" style={{ maxWidth: '620px', margin: '0 auto 20px' }}>
+          <h3 style={{ marginBottom: '16px', fontSize: '1.1rem' }}>Create New Post</h3>
           <form onSubmit={handleCreatePost}>
-            <div className="form-group">
-              <label>Post Type</label>
+            <div className="form-group" style={{ marginBottom: '12px' }}>
+              <label style={{ fontSize: '0.9rem', marginBottom: '6px', display: 'block' }}>Post Type</label>
               <select 
                 className="form-control"
                 value={newPost.type}
                 onChange={(e) => setNewPost({ ...newPost, type: e.target.value })}
+                style={{ fontSize: '0.9rem' }}
               >
                 <option value="general">General</option>
                 <option value="workout">Workout</option>
@@ -266,30 +270,44 @@ const Social = () => {
                 <option value="achievement">Achievement</option>
               </select>
             </div>
-            <div className="form-group">
-              <label>What's on your mind?</label>
+            <div className="form-group" style={{ marginBottom: '12px' }}>
+              <label style={{ fontSize: '0.9rem', marginBottom: '6px', display: 'block' }}>What's on your mind?</label>
               <textarea
                 className="form-control"
-                rows="4"
+                rows="3"
                 value={newPost.text}
                 onChange={(e) => setNewPost({ ...newPost, text: e.target.value })}
                 placeholder="Share your fitness journey..."
+                style={{ fontSize: '0.9rem', resize: 'vertical' }}
               />
             </div>
-            <div className="form-group">
-              <label>Add Image (optional)</label>
+            <div className="form-group" style={{ marginBottom: '16px' }}>
+              <label style={{ fontSize: '0.9rem', marginBottom: '6px', display: 'block' }}>Add Image (optional)</label>
               <input
                 type="file"
                 accept="image/*"
                 className="form-control"
                 onChange={handleImageSelect}
+                style={{ fontSize: '0.85rem', padding: '8px' }}
               />
               {newPost.image && (
-                <div style={{ marginTop: '10px' }}>
+                <div style={{ 
+                  marginTop: '12px', 
+                  borderRadius: '8px',
+                  overflow: 'hidden',
+                  maxWidth: '100%',
+                  backgroundColor: '#000',
+                  display: 'flex',
+                  justifyContent: 'center'
+                }}>
                   <img 
                     src={URL.createObjectURL(newPost.image)} 
                     alt="Preview" 
-                    style={{ maxWidth: '300px', maxHeight: '300px', borderRadius: '8px' }}
+                    style={{ 
+                      maxWidth: '100%', 
+                      maxHeight: '400px',
+                      objectFit: 'contain'
+                    }}
                   />
                 </div>
               )}
@@ -298,57 +316,71 @@ const Social = () => {
               type="submit" 
               className="btn btn-primary"
               disabled={uploadingImage}
+              style={{ width: '100%', padding: '10px', fontSize: '0.95rem', fontWeight: '600' }}
             >
-              {uploadingImage ? 'Uploading...' : 'Post'}
+              {uploadingImage ? '📤 Uploading...' : '✨ Share Post'}
             </button>
           </form>
         </div>
       )}
 
       {/* Feed Filter */}
-      <div className="card mb-2">
-        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '10px' }}>
+      <div className="card mb-2" style={{ maxWidth: '620px', margin: '0 auto 20px' }}>
+        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '12px' }}>
           <button 
             className={`btn ${feedFilter === 'all' ? 'btn-primary' : 'btn-secondary'}`}
             onClick={() => setFeedFilter('all')}
+            style={{ fontSize: '0.9rem', padding: '8px 16px' }}
           >
             🌍 All Posts
           </button>
           <button 
             className={`btn ${feedFilter === 'following' ? 'btn-primary' : 'btn-secondary'}`}
             onClick={() => setFeedFilter('following')}
+            style={{ fontSize: '0.9rem', padding: '8px 16px' }}
           >
             👥 Following
           </button>
         </div>
-        <div style={{ borderTop: '1px solid #f0f0f0', paddingTop: '10px', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+        <div style={{ 
+          borderTop: '1px solid rgba(0, 229, 255, 0.1)', 
+          paddingTop: '12px', 
+          display: 'flex', 
+          gap: '8px', 
+          flexWrap: 'wrap' 
+        }}>
           <button 
             className={`btn ${filter === 'all' ? 'btn-primary' : 'btn-secondary'}`}
             onClick={() => setFilter('all')}
+            style={{ fontSize: '0.85rem', padding: '6px 12px' }}
           >
             All Types
           </button>
           <button 
             className={`btn ${filter === 'workout' ? 'btn-primary' : 'btn-secondary'}`}
             onClick={() => setFilter('workout')}
+            style={{ fontSize: '0.85rem', padding: '6px 12px' }}
           >
             Workouts
           </button>
           <button 
             className={`btn ${filter === 'meal' ? 'btn-primary' : 'btn-secondary'}`}
             onClick={() => setFilter('meal')}
+            style={{ fontSize: '0.85rem', padding: '6px 12px' }}
           >
             Meals
           </button>
           <button 
             className={`btn ${filter === 'progress' ? 'btn-primary' : 'btn-secondary'}`}
             onClick={() => setFilter('progress')}
+            style={{ fontSize: '0.85rem', padding: '6px 12px' }}
           >
             Progress
           </button>
           <button 
             className={`btn ${filter === 'achievement' ? 'btn-primary' : 'btn-secondary'}`}
             onClick={() => setFilter('achievement')}
+            style={{ fontSize: '0.85rem', padding: '6px 12px' }}
           >
             Achievements
           </button>
@@ -358,95 +390,135 @@ const Social = () => {
       {loading ? (
         <div className="spinner"></div>
       ) : posts.length === 0 ? (
-        <div className="card text-center">
+        <div className="card text-center" style={{ maxWidth: '620px', margin: '0 auto' }}>
           <p className="text-muted">No posts to show. Follow people to see their updates!</p>
         </div>
       ) : (
-        <div>
+        <div style={{ maxWidth: '620px', margin: '0 auto' }}>
           {posts.map((post) => {
             const isLiked = post.isLiked || post.likes?.includes(user?.id);
             
             return (
               <div key={post.id} className="post-card">
+                {/* Header with avatar and user info */}
                 <div className="post-header">
                   <div className="post-avatar">
                     {getInitials(post.user?.name)}
                   </div>
-                  <div className="post-info" style={{ flex: 1 }}>
-                    <div className="flex-between">
-                      <div>
-                        <h4>{post.user?.name}</h4>
-                        <p className="post-time">{getTimeAgo(post.createdAt)}</p>
-                      </div>
-                      {post.user?.id === user?.id && (
-                        <button 
-                          className="btn btn-danger"
-                          onClick={() => handleDelete(post.id)}
-                          style={{ padding: '6px 12px', fontSize: '0.85rem' }}
-                        >
-                          Delete
-                        </button>
-                      )}
-                    </div>
+                  <div className="post-info">
+                    <h4>{post.user?.name || 'Unknown User'}</h4>
+                    <p className="post-time">{getTimeAgo(post.created_at)}</p>
                   </div>
                 </div>
 
-                <div style={{ marginBottom: '15px' }}>
-                  <span className="workout-badge scheduled">{post.type}</span>
-                  {post.content?.text && (
-                    <p style={{ marginTop: '10px' }}>{post.content.text}</p>
-                  )}
-                  
-                  {/* Display single image from image_url */}
-                  {post.content?.image_url && (
-                    <div style={{ marginTop: '10px' }}>
+                {/* Display image */}
+                {post.content?.image_url && (
+                  <div style={{ 
+                    width: '100%', 
+                    overflow: 'hidden',
+                    backgroundColor: '#000',
+                    maxHeight: '500px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}>
+                    <img 
+                      src={post.content.image_url} 
+                      alt="Post" 
+                      style={{ 
+                        width: '100%', 
+                        height: 'auto',
+                        objectFit: 'contain',
+                        maxHeight: '500px'
+                      }}
+                    />
+                  </div>
+                )}
+
+                {/* Display multiple images */}
+                {post.content?.imageUrls && post.content.imageUrls.length > 0 && (
+                  <div style={{ 
+                    width: '100%', 
+                    overflow: 'hidden',
+                    backgroundColor: '#000'
+                  }}>
+                    {post.content.imageUrls.map((url, idx) => (
                       <img 
-                        src={post.content.image_url} 
+                        key={idx} 
+                        src={url} 
                         alt="Post" 
-                        style={{ maxWidth: '100%', borderRadius: '8px', marginBottom: '10px' }}
+                        style={{ 
+                          width: '100%', 
+                          height: 'auto',
+                          objectFit: 'contain',
+                          maxHeight: '500px'
+                        }}
                       />
-                    </div>
-                  )}
+                    ))}
+                  </div>
+                )}
 
-                  {/* Display multiple images from imageUrls array */}
-                  {post.content?.imageUrls && post.content.imageUrls.length > 0 && (
-                    <div style={{ marginTop: '10px' }}>
-                      {post.content.imageUrls.map((url, idx) => (
-                        <img 
-                          key={idx} 
-                          src={url} 
-                          alt="Post" 
-                          style={{ maxWidth: '100%', borderRadius: '8px', marginBottom: '10px' }}
-                        />
-                      ))}
-                    </div>
-                  )}
-                </div>
-
+                {/* Actions */}
                 <div className="post-actions">
                   <button 
                     className={`post-action-btn ${isLiked ? 'liked' : ''}`}
                     onClick={() => handleLike(post.id)}
                   >
-                    {post.likesCount || post.likes?.length || 0} likes
+                    ❤️ {post.likesCount || post.likes?.length || 0}
                   </button>
                   <button className="post-action-btn">
-                    {post.comments?.length || 0} comments
+                    💬 {post.comments?.length || 0}
                   </button>
                 </div>
 
+                {/* Post content and type */}
+                <div className="post-content">
+                  <span 
+                    className="workout-badge scheduled" 
+                    style={{ 
+                      fontSize: '0.7rem', 
+                      padding: '2px 8px',
+                      marginRight: '8px'
+                    }}
+                  >
+                    {post.post_type || 'general'}
+                  </span>
+                  {post.content?.text && (
+                    <span><strong>{post.user?.name}</strong> {post.content.text}</span>
+                  )}
+                </div>
+
+                {/* Comments */}
                 {post.comments && post.comments.length > 0 && (
-                  <div style={{ marginTop: '15px', paddingTop: '15px', borderTop: '1px solid #e9ecef' }}>
+                  <div style={{ 
+                    padding: '0 0 12px',
+                    borderTop: 'none'
+                  }}>
                     {post.comments.map((comment) => (
-                      <div key={comment.id} style={{ marginBottom: '10px', padding: '10px', background: '#f8f9fa', borderRadius: '8px' }}>
-                        <strong>{comment.user?.name}: </strong>
-                        <span>{comment.text}</span>
+                      <div 
+                        key={comment.id} 
+                        style={{ 
+                          marginTop: '8px',
+                          fontSize: '0.9rem',
+                          color: 'var(--text-secondary)'
+                        }}
+                      >
+                        <strong style={{ color: 'var(--white)' }}>
+                          {comment.user?.name}:
+                        </strong>{' '}
+                        {comment.text}
                       </div>
                     ))}
                   </div>
                 )}
 
-                <div style={{ marginTop: '15px', display: 'flex', gap: '10px' }}>
+                {/* Comment input */}
+                <div style={{ 
+                  padding: '12px 0',
+                  display: 'flex', 
+                  gap: '10px',
+                  borderTop: 'none'
+                }}>
                   <input
                     type="text"
                     className="form-control"
@@ -456,10 +528,15 @@ const Social = () => {
                     onKeyPress={(e) => {
                       if (e.key === 'Enter') handleComment(post.id);
                     }}
+                    style={{ fontSize: '0.9rem' }}
                   />
                   <button 
                     className="btn btn-primary"
                     onClick={() => handleComment(post.id)}
+                    style={{ 
+                      padding: '6px 16px',
+                      fontSize: '0.85rem'
+                    }}
                   >
                     Post
                   </button>

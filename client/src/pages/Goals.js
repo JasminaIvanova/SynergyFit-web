@@ -9,6 +9,7 @@ const Goals = () => {
   const [filter, setFilter] = useState('active');
   const [showForm, setShowForm] = useState(false);
   const [notification, setNotification] = useState({ show: false, message: '', type: '' });
+  const [deleteConfirmGoal, setDeleteConfirmGoal] = useState(null);
   const [form, setForm] = useState({
     title: '',
     description: '',
@@ -96,13 +97,14 @@ const Goals = () => {
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this goal?')) {
-      try {
-        await goalService.deleteGoal(id);
-        loadGoals();
-      } catch (error) {
-        console.error('Error deleting goal:', error);
-      }
+    try {
+      await goalService.deleteGoal(id);
+      showNotification('Goal deleted successfully!', 'success');
+      setDeleteConfirmGoal(null);
+      loadGoals();
+    } catch (error) {
+      console.error('Error deleting goal:', error);
+      showNotification('Error deleting goal', 'error');
     }
   };
 
@@ -615,13 +617,56 @@ const Goals = () => {
                 )}
                 <button 
                   className="btn btn-danger"
-                  onClick={() => handleDelete(goal.id)}
+                  onClick={() => setDeleteConfirmGoal(goal.id)}
                 >
                   Delete
                 </button>
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirmGoal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.7)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <div className="card" style={{
+            maxWidth: '400px',
+            margin: '20px',
+            padding: '24px'
+          }}>
+            <h3 style={{ marginBottom: '16px', fontSize: '1.2rem' }}>Delete Goal?</h3>
+            <p style={{ marginBottom: '24px', color: 'var(--text-secondary)' }}>
+              Are you sure you want to delete this goal? This action cannot be undone.
+            </p>
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button 
+                className="btn btn-danger"
+                onClick={() => handleDelete(deleteConfirmGoal)}
+                style={{ flex: 1, padding: '10px', fontWeight: '600' }}
+              >
+                Delete
+              </button>
+              <button 
+                className="btn btn-secondary"
+                onClick={() => setDeleteConfirmGoal(null)}
+                style={{ flex: 1, padding: '10px', fontWeight: '600' }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { userService, postService } from '../services';
+import { userService, postService, uploadService } from '../services';
 
 const Profile = () => {
   const { id } = useParams();
@@ -14,6 +14,11 @@ const Profile = () => {
   const [following, setFollowing] = useState([]);
   const [editMode, setEditMode] = useState(false);
   const [notification, setNotification] = useState({ show: false, message: '', type: '' });
+  const [editingPost, setEditingPost] = useState(null);
+  const [editPostForm, setEditPostForm] = useState({ text: '', type: '', image_url: '' });
+  const [newImage, setNewImage] = useState(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [deleteConfirmPost, setDeleteConfirmPost] = useState(null);
   const [profileForm, setProfileForm] = useState({
     name: '',
     bio: '',
@@ -112,6 +117,103 @@ const Profile = () => {
     } catch (error) {
       console.error('Error toggling follow:', error);
     }
+  };
+
+  const handleDeletePost = async (postId) => {
+    try {
+      await postService.deletePost(postId);
+      showNotification('Post deleted successfully!');
+      setDeleteConfirmPost(null);
+      loadPosts();
+    } catch (error) {
+      console.error('Error deleting post:', error);
+      showNotification('Error deleting post', 'error');
+    }
+  };
+
+  const handleEditPost = (post) => {
+    setEditingPost(post.id);
+    setEditPostForm({
+      text: post.content?.text || '',
+      type: post.post_type || 'general',
+      image_url: post.content?.image_url || ''
+    });
+    setNewImage(null);
+  };
+
+  const handleImageSelect = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setNewImage(file);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setNewImage(null);
+    setEditPostForm({ ...editPostForm, image_url: '' });
+  };
+
+  const handleSaveEdit = async (postId) => {
+    try {
+      setUploadingImage(true);
+      let imageUrl = editPostForm.image_url;
+
+      // Upload new image if selected
+      if (newImage) {
+        const uploadRes = await uploadService.uploadImage(newImage);
+        imageUrl = uploadRes.data.url;
+      }
+
+      await postService.updatePost(postId, {
+        post_type: editPostForm.type,
+        content: {
+          text: editPostForm.text,
+          image_url: imageUrl
+        }
+      });
+      showNotification('Post updated successfully!');
+      setEditingPost(null);
+      setNewImage(null);
+      loadPosts();
+    } catch (error) {
+      console.error('Error updating post:', error);
+      showNotification('Error updating post', 'error');
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingPost(null);
+    setEditPostForm({ text: '', type: '', image_url: '' });
+    setNewImage(null);
+  };
+
+  const handleLike = async (postId) => {
+    try {
+      await postService.toggleLike(postId);
+      loadPosts();
+    } catch (error) {
+      console.error('Error liking post:', error);
+    }
+  };
+
+  const getInitials = (name) => {
+    if (!name) return 'U';
+    const parts = name.split(' ');
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
+  };
+
+  const getTimeAgo = (date) => {
+    const seconds = Math.floor((new Date() - new Date(date)) / 1000);
+    
+    if (seconds < 60) return `${seconds}s ago`;
+    if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+    if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+    return `${Math.floor(seconds / 86400)}d ago`;
   };
 
   const handleSaveProfile = async (e) => {
@@ -577,30 +679,316 @@ const Profile = () => {
         </div>
       </div>
 
-      <div className="card">
-        <h2 className="mb-2">Posts</h2>
+      {/* Posts Section */}
+      <div style={{ marginTop: '24px' }}>
+        <h2 className="mb-2" style={{ 
+          textAlign: 'center', 
+          fontSize: '1.5rem',
+          marginBottom: '20px',
+          color: 'var(--white)'
+        }}>My Posts</h2>
         {posts.length === 0 ? (
-          <p className="text-muted text-center">No posts yet</p>
+          <div className="card" style={{ textAlign: 'center' }}>
+            <p className="text-muted">No posts yet</p>
+          </div>
         ) : (
-          <div style={{ display: 'grid', gap: '15px' }}>
-            {posts.map((post) => (
-              <div key={post.id} style={{ padding: '15px', border: '1px solid #e9ecef', borderRadius: '8px' }}>
-                <div style={{ marginBottom: '10px' }}>
-                  <span className="workout-badge scheduled">{post.type}</span>
-                  <span className="text-muted" style={{ marginLeft: '10px', fontSize: '0.9rem' }}>
-                    {new Date(post.createdAt).toLocaleDateString()}
-                  </span>
+          <div style={{ maxWidth: '620px', margin: '0 auto' }}>
+            {posts.map((post) => {
+              const isLiked = post.isLiked || post.likes?.includes(currentUser?.id);
+              
+              return (
+                <div key={post.id} className="post-card">
+                  {/* Header with avatar and user info */}
+                  <div className="post-header">
+                    <div className="post-avatar">
+                      {getInitials(post.user?.name || user?.name)}
+                    </div>
+                    <div className="post-info">
+                      <h4>{post.user?.name || user?.name || 'Unknown User'}</h4>
+                      <p className="post-time">{getTimeAgo(post.created_at)}</p>
+                    </div>
+                    {isOwnProfile && editingPost !== post.id && (
+                      <div style={{ marginLeft: 'auto', display: 'flex', gap: '8px' }}>
+                        <button 
+                          className="btn btn-secondary"
+                          onClick={() => handleEditPost(post)}
+                          style={{ 
+                            padding: '4px 10px', 
+                            fontSize: '0.8rem'
+                          }}
+                        >
+                          Edit
+                        </button>
+                        <button 
+                          className="btn btn-danger"
+                          onClick={() => setDeleteConfirmPost(post.id)}
+                          style={{ 
+                            padding: '4px 10px', 
+                            fontSize: '0.8rem'
+                          }}
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Edit Form */}
+                  {isOwnProfile && editingPost === post.id && (
+                    <div style={{ padding: '16px', backgroundColor: 'rgba(0, 229, 255, 0.05)', borderBottom: '1px solid rgba(0, 229, 255, 0.1)' }}>
+                      <div className="form-group" style={{ marginBottom: '12px' }}>
+                        <label style={{ fontSize: '0.85rem', marginBottom: '6px', display: 'block' }}>Post Type</label>
+                        <select 
+                          className="form-control"
+                          value={editPostForm.type}
+                          onChange={(e) => setEditPostForm({ ...editPostForm, type: e.target.value })}
+                          style={{ fontSize: '0.9rem' }}
+                        >
+                          <option value="general">General</option>
+                          <option value="workout">Workout</option>
+                          <option value="meal">Meal</option>
+                          <option value="progress">Progress</option>
+                          <option value="achievement">Achievement</option>
+                        </select>
+                      </div>
+                      <div className="form-group" style={{ marginBottom: '12px' }}>
+                        <label style={{ fontSize: '0.85rem', marginBottom: '6px', display: 'block' }}>Text</label>
+                        <textarea
+                          className="form-control"
+                          rows="3"
+                          value={editPostForm.text}
+                          onChange={(e) => setEditPostForm({ ...editPostForm, text: e.target.value })}
+                          style={{ fontSize: '0.9rem', resize: 'vertical' }}
+                        />
+                      </div>
+                      
+                      {/* Image Upload */}
+                      <div className="form-group" style={{ marginBottom: '12px' }}>
+                        <label style={{ fontSize: '0.85rem', marginBottom: '6px', display: 'block' }}>Image</label>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="form-control"
+                          onChange={handleImageSelect}
+                          style={{ fontSize: '0.85rem', padding: '8px' }}
+                        />
+                        
+                        {/* Current or New Image Preview */}
+                        {(newImage || editPostForm.image_url) && (
+                          <div style={{ 
+                            marginTop: '12px', 
+                            position: 'relative',
+                            borderRadius: '8px',
+                            overflow: 'hidden',
+                            maxWidth: '100%',
+                            backgroundColor: '#000'
+                          }}>
+                            <img 
+                              src={newImage ? URL.createObjectURL(newImage) : editPostForm.image_url} 
+                              alt="Preview" 
+                              style={{ 
+                                maxWidth: '100%', 
+                                maxHeight: '300px',
+                                objectFit: 'contain',
+                                display: 'block'
+                              }}
+                            />
+                            <button
+                              onClick={handleRemoveImage}
+                              style={{
+                                position: 'absolute',
+                                top: '8px',
+                                right: '8px',
+                                backgroundColor: 'rgba(255, 75, 75, 0.9)',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '50%',
+                                width: '32px',
+                                height: '32px',
+                                cursor: 'pointer',
+                                fontSize: '1.2rem',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontWeight: 'bold'
+                              }}
+                            >
+                              ×
+                            </button>
+                          </div>
+                        )}
+                      </div>
+
+                      <div style={{ display: 'flex', gap: '10px' }}>
+                        <button 
+                          className="btn btn-primary"
+                          onClick={() => handleSaveEdit(post.id)}
+                          disabled={uploadingImage}
+                          style={{ flex: 1, fontSize: '0.9rem', padding: '8px' }}
+                        >
+                          {uploadingImage ? 'Uploading...' : 'Save'}
+                        </button>
+                        <button 
+                          className="btn btn-secondary"
+                          onClick={handleCancelEdit}
+                          disabled={uploadingImage}
+                          style={{ flex: 1, fontSize: '0.9rem', padding: '8px' }}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Display image */}
+                  {editingPost !== post.id && post.content?.image_url && (
+                    <div style={{ 
+                      width: '100%', 
+                      overflow: 'hidden',
+                      backgroundColor: '#000',
+                      maxHeight: '500px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}>
+                      <img 
+                        src={post.content.image_url} 
+                        alt="Post" 
+                        style={{ 
+                          width: '100%', 
+                          height: 'auto',
+                          objectFit: 'contain',
+                          maxHeight: '500px'
+                        }}
+                      />
+                    </div>
+                  )}
+
+                  {/* Display multiple images */}
+                  {post.content?.imageUrls && post.content.imageUrls.length > 0 && (
+                    <div style={{ 
+                      width: '100%', 
+                      overflow: 'hidden',
+                      backgroundColor: '#000'
+                    }}>
+                      {post.content.imageUrls.map((url, idx) => (
+                        <img 
+                          key={idx} 
+                          src={url} 
+                          alt="Post" 
+                          style={{ 
+                            width: '100%', 
+                            height: 'auto',
+                            objectFit: 'contain',
+                            maxHeight: '500px'
+                          }}
+                        />
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Actions */}
+                  <div className="post-actions">
+                    <button 
+                      className={`post-action-btn ${isLiked ? 'liked' : ''}`}
+                      onClick={() => handleLike(post.id)}
+                    >
+                      ❤️ {post.likesCount || post.likes?.length || 0}
+                    </button>
+                    <button className="post-action-btn">
+                      💬 {post.comments?.length || 0}
+                    </button>
+                  </div>
+
+                  {/* Post content and type */}
+                  <div className="post-content">
+                    <span 
+                      className="workout-badge scheduled" 
+                      style={{ 
+                        fontSize: '0.7rem', 
+                        padding: '2px 8px',
+                        marginRight: '8px'
+                      }}
+                    >
+                      {post.post_type || 'general'}
+                    </span>
+                    {post.content?.text && (
+                      <span><strong>{post.user?.name || user?.name}</strong> {post.content.text}</span>
+                    )}
+                  </div>
+
+                  {/* Comments */}
+                  {post.comments && post.comments.length > 0 && (
+                    <div style={{ 
+                      padding: '0 0 12px',
+                      borderTop: 'none'
+                    }}>
+                      {post.comments.map((comment) => (
+                        <div 
+                          key={comment.id} 
+                          style={{ 
+                            marginTop: '8px',
+                            fontSize: '0.9rem',
+                            color: 'var(--text-secondary)'
+                          }}
+                        >
+                          <strong style={{ color: 'var(--white)' }}>
+                            {comment.user?.name}:
+                          </strong>{' '}
+                          {comment.text}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
-                {post.content?.text && <p>{post.content.text}</p>}
-                <div style={{ marginTop: '10px', display: 'flex', gap: '15px', fontSize: '0.9rem', color: '#868e96' }}>
-                  <span>{post.likes?.length || 0} likes</span>
-                  <span>{post.comments?.length || 0} comments</span>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirmPost && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.7)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <div className="card" style={{
+            maxWidth: '400px',
+            margin: '20px',
+            padding: '24px'
+          }}>
+            <h3 style={{ marginBottom: '16px', fontSize: '1.2rem' }}>Delete Post?</h3>
+            <p style={{ marginBottom: '24px', color: 'var(--text-secondary)' }}>
+              Are you sure you want to delete this post? This action cannot be undone.
+            </p>
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button 
+                className="btn btn-danger"
+                onClick={() => handleDeletePost(deleteConfirmPost)}
+                style={{ flex: 1, padding: '10px', fontWeight: '600' }}
+              >
+                Delete
+              </button>
+              <button 
+                className="btn btn-secondary"
+                onClick={() => setDeleteConfirmPost(null)}
+                style={{ flex: 1, padding: '10px', fontWeight: '600' }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

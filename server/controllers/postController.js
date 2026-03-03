@@ -34,8 +34,28 @@ exports.getPosts = async (req, res) => {
       throw error;
     }
 
+    console.log('Posts fetched:', posts?.length || 0);
+    if (posts && posts.length > 0) {
+      console.log('First post sample:', {
+        id: posts[0].id,
+        contentType: typeof posts[0].content,
+        content: posts[0].content,
+        user: posts[0].user?.name
+      });
+    }
+
     // Get likes and comments for each post
     for (let post of posts || []) {
+      // Parse content if it's a string
+      if (typeof post.content === 'string') {
+        try {
+          post.content = JSON.parse(post.content);
+        } catch (e) {
+          console.error('Error parsing post content:', e);
+          post.content = { text: post.content };
+        }
+      }
+
       // Get likes count and check if user liked
       const { data: likes } = await supabaseAdmin
         .from('post_likes')
@@ -53,7 +73,11 @@ exports.getPosts = async (req, res) => {
         .eq('post_id', post.id)
         .order('created_at', { ascending: true });
       
-      post.comments = comments || [];
+      // Map comment field to text for frontend consistency
+      post.comments = (comments || []).map(c => ({
+        ...c,
+        text: c.comment
+      }));
 
       // Get related workout/progress data if exists
       if (post.workout_id) {
@@ -122,6 +146,16 @@ exports.createPost = async (req, res) => {
       throw error;
     }
 
+    // Parse content if it's a string
+    if (typeof post.content === 'string') {
+      try {
+        post.content = JSON.parse(post.content);
+      } catch (e) {
+        console.error('Error parsing post content:', e);
+        post.content = { text: post.content };
+      }
+    }
+
     post.likes = [];
     post.comments = [];
     post.likesCount = 0;
@@ -150,6 +184,16 @@ exports.getPostById = async (req, res) => {
       return res.status(404).json({ message: 'Post not found' });
     }
 
+    // Parse content if it's a string
+    if (typeof post.content === 'string') {
+      try {
+        post.content = JSON.parse(post.content);
+      } catch (e) {
+        console.error('Error parsing post content:', e);
+        post.content = { text: post.content };
+      }
+    }
+
     // Get likes
     const { data: likes } = await supabaseAdmin
       .from('post_likes')
@@ -167,7 +211,11 @@ exports.getPostById = async (req, res) => {
       .eq('post_id', post.id)
       .order('created_at', { ascending: true });
     
-    post.comments = comments || [];
+    // Map comment field to text for frontend consistency
+    post.comments = (comments || []).map(c => ({
+      ...c,
+      text: c.comment
+    }));
 
     // Get related data if exists
     if (post.workout_id) {
@@ -430,6 +478,16 @@ exports.getUserPosts = async (req, res) => {
 
     // Get likes and comments for each post
     for (let post of posts || []) {
+      // Parse content if it's a string
+      if (typeof post.content === 'string') {
+        try {
+          post.content = JSON.parse(post.content);
+        } catch (e) {
+          console.error('Error parsing post content:', e);
+          post.content = { text: post.content };
+        }
+      }
+
       const { data: likes } = await supabaseAdmin
         .from('post_likes')
         .select('user_id')
@@ -445,7 +503,11 @@ exports.getUserPosts = async (req, res) => {
         .eq('post_id', post.id)
         .order('created_at', { ascending: true });
       
-      post.comments = comments || [];
+      // Map comment field to text for frontend consistency
+      post.comments = (comments || []).map(c => ({
+        ...c,
+        text: c.comment
+      }));
     }
 
     // Get total count
