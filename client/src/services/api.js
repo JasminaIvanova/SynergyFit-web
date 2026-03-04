@@ -1,7 +1,13 @@
 import axios from 'axios';
 
+const envApiUrl = process.env.REACT_APP_API_URL;
+const isProd = process.env.NODE_ENV === 'production';
+const baseURL = isProd && envApiUrl && envApiUrl.includes('localhost')
+  ? '/api'
+  : (envApiUrl || '/api');
+
 const API = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || '/api',
+  baseURL,
 });
 
 // Add token to requests
