@@ -1,6 +1,6 @@
 # SynergyFit
 
-> A full-stack social fitness web platform for tracking workouts, nutrition, body progress, and goals — with an Instagram-style community feed and a built-in admin panel.
+> A full-stack social fitness web platform for tracking workouts, nutrition, body progress, and goals — with community feed and a built-in admin panel.
 
 ---
 
@@ -25,10 +25,10 @@
 | Area | Capability |
 |---|---|
 | **Workouts** | Create custom workout plans, schedule sessions, log completion, rate sessions, track streaks |
-| **Exercise Library** | Browse 25+ built-in exercises filtered by category, muscle group, difficulty, and equipment; create custom exercises |
+| **Exercise Library** | Browse exercises (rapidAPI)
 | **Nutrition** | Log meals (breakfast, lunch, dinner, snack), search millions of foods via Open Food Facts API, track calories and macros (protein, carbs, fat, fiber) |
 | **Progress** | Record weight, body measurements (chest, waist, hips, arms, thighs), body fat %, mood, energy level, and upload progress photos |
-| **Goals** | Set targets (weight, strength, endurance, habit, custom), track milestones with progress bars, auto-complete goals when progress matches targets |
+| **Goals** | Set targets (weight, strength, endurance, habit, custom), track milestones, uto-complete goals when progress matches targets |
 | **Social Feed** | Share posts (with images) about workouts, meals, progress, and achievements; like and comment; follow other users |
 | **Admin Panel** | Manage users (suspend/activate), moderate content (delete posts), view platform-wide statistics |
 
@@ -268,13 +268,6 @@ SUPABASE_URL=https://your-project-id.supabase.co
 SUPABASE_ANON_KEY=your_anon_key
 SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 
-# JWT
-JWT_SECRET=a_long_random_secret_string
-
-# Cloudinary (optional – only needed for alternative image hosting)
-CLOUDINARY_CLOUD_NAME=
-CLOUDINARY_API_KEY=
-CLOUDINARY_API_SECRET=
 ```
 
 Create a `.env` file inside the `client/` directory:
@@ -349,36 +342,6 @@ npm run client
 |---|---|---|
 | Frontend | http://localhost:3000 | SynergyFit landing page |
 | Backend health | http://localhost:5000/api/health | `{ "status": "OK" }` |
-
----
-
-### Step 8 — (Optional) Create an admin account
-
-1. Register a regular account through the app.
-2. Open the **Supabase SQL Editor** and run:
-
-```sql
-UPDATE users
-SET role = 'admin'
-WHERE email = 'your-email@example.com';
-```
-
-3. Log out and log back in. A **🛡️ Admin** link will appear in the navbar.
-
-For full details see [ADMIN_SETUP.md](ADMIN_SETUP.md).
-
----
-
-### Troubleshooting
-
-| Problem | Solution |
-|---|---|
-| `Supabase connection error` | Verify `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` in `.env` |
-| `Port 5000 already in use` | Change `PORT` in `.env` and update `"proxy"` in `client/package.json` |
-| `Cannot find module` | Run `npm run install-all` again from the project root |
-| Admin panel not visible | Log out, log back in; confirm `role = 'admin'` in database |
-
----
 
 ## 5. Key Folders & Files
 
