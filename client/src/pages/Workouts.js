@@ -230,12 +230,12 @@ const Workouts = () => {
                       transition: 'all 0.2s ease'
                     }}
                     onMouseEnter={(e) => {
-                      e.target.style.background = '#EF4444';
-                      e.target.querySelector('svg').style.stroke = 'white';
+                      e.currentTarget.style.background = '#EF4444';
+                      e.currentTarget.querySelector('svg').style.stroke = 'white';
                     }}
                     onMouseLeave={(e) => {
-                      e.target.style.background = 'rgba(239, 68, 68, 0.1)';
-                      e.target.querySelector('svg').style.stroke = '#EF4444';
+                      e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)';
+                      e.currentTarget.querySelector('svg').style.stroke = '#EF4444';
                     }}
                   >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ transition: 'stroke 0.2s ease' }}>
