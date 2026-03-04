@@ -268,13 +268,6 @@ SUPABASE_URL=https://your-project-id.supabase.co
 SUPABASE_ANON_KEY=your_anon_key
 SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 
-# JWT
-JWT_SECRET=a_long_random_secret_string
-
-# Cloudinary (optional – only needed for alternative image hosting)
-CLOUDINARY_CLOUD_NAME=
-CLOUDINARY_API_KEY=
-CLOUDINARY_API_SECRET=
 ```
 
 Create a `.env` file inside the `client/` directory:
