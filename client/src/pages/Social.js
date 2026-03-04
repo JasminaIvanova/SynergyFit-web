@@ -28,6 +28,7 @@ const Social = () => {
 
   useEffect(() => {
     loadPosts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filter, feedFilter]);
 
   const loadPosts = async () => {
@@ -158,14 +159,6 @@ const Social = () => {
     }
   };
 
-  const handleDelete = async (postId) => {
-    try {
-      await postService.deletePost(postId);
-      loadPosts();
-    } catch (error) {
-      console.error('Error deleting post:', error);
-    }
-  };
 
   const getInitials = (name) => {
     if (!name) return 'U';

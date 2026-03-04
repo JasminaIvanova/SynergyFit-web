@@ -30,6 +30,7 @@ const Goals = () => {
   // Reload goals when filter changes OR when navigating to this page
   useEffect(() => {
     loadGoals();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filter, location.pathname]);
 
   // Reload goals when page becomes visible (e.g., after navigating from Progress page)
@@ -49,6 +50,7 @@ const Goals = () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('focus', loadGoals);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Listen for goals refresh signal from other pages (e.g., Progress page)
@@ -76,6 +78,7 @@ const Goals = () => {
       window.removeEventListener('storage', handleStorageChange);
       clearInterval(interval);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadGoals = async () => {
@@ -169,32 +172,24 @@ const Goals = () => {
     // Auto-set unit based on goal type
     if (field === 'goal_type') {
       let defaultUnit = '';
-      let titlePlaceholder = '';
-      
       switch(value) {
         case 'weight':
           defaultUnit = 'kg';
-          titlePlaceholder = 'e.g. Lose 10kg';
           break;
         case 'strength':
           defaultUnit = 'kg';
-          titlePlaceholder = 'e.g. Bench press 100kg';
           break;
         case 'endurance':
           defaultUnit = 'km';
-          titlePlaceholder = 'e.g. Run 10km';
           break;
         case 'flexibility':
           defaultUnit = 'cm';
-          titlePlaceholder = 'e.g. Touch toes';
           break;
         case 'habit':
           defaultUnit = 'days';
-          titlePlaceholder = 'e.g. Exercise 30 days';
           break;
         default:
           defaultUnit = '';
-          titlePlaceholder = 'e.g. Your goal';
       }
       
       setForm(prev => ({

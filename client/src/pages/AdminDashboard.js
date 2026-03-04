@@ -37,6 +37,7 @@ const AdminDashboard = () => {
     }
     
     loadStats();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, navigate]);
 
   useEffect(() => {
@@ -45,6 +46,7 @@ const AdminDashboard = () => {
     } else if (activeTab === 'posts') {
       loadPosts();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, filters]);
 
   const loadStats = async () => {

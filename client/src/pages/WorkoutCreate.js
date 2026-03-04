@@ -53,6 +53,7 @@ const WorkoutCreate = () => {
     if (showExerciseBrowser) {
       loadExercises();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showExerciseBrowser, searchQuery]);
 
   const addExercise = (exercise) => {

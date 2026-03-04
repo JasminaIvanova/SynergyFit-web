@@ -58,6 +58,7 @@ const Profile = () => {
         loadFollowStatus();
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profileId]);
 
   const loadProfile = async () => {

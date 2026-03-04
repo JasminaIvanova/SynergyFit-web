@@ -13,6 +13,7 @@ const Exercises = () => {
 
   useEffect(() => {
     loadExercises();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filter]);
 
   const loadExercises = async () => {

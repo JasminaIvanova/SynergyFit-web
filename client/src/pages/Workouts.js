@@ -18,6 +18,7 @@ const Workouts = () => {
 
   useEffect(() => {
     loadWorkouts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filter]);
 
   const loadWorkouts = async () => {

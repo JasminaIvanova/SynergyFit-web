@@ -33,6 +33,7 @@ const WorkoutSession = () => {
     } else {
       setLoading(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   const loadWorkout = async () => {
@@ -90,6 +91,7 @@ const WorkoutSession = () => {
     if (showExerciseBrowser) {
       loadExercises();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showExerciseBrowser, searchQuery]);
 
   const addExerciseToSession = (exercise) => {
@@ -246,7 +248,7 @@ const WorkoutSession = () => {
           }))
       };
 
-      const res = await workoutService.createWorkout(payload);
+      await workoutService.createWorkout(payload);
       showNotification('Workout saved successfully!', 'success');
       setTimeout(() => navigate('/workouts'), 1000);
     } catch (error) {

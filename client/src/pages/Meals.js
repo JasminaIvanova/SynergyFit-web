@@ -22,6 +22,7 @@ const Meals = () => {
   useEffect(() => {
     loadMeals();
     loadDailyStats();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedDate]);
 
   const loadMeals = async () => {

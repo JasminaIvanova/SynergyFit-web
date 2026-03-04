@@ -54,6 +54,7 @@ const Progress = () => {
   useEffect(() => {
     loadProgress();
     loadStats();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [period]);
 
   const loadProgress = async () => {
